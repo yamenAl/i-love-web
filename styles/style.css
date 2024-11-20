@@ -1,0 +1,36 @@
+* {
+    box-sizing: border-box;
+  }
+  body {
+    min-height: 100vh;
+    font-family: sans-serif;
+  }
+  body > * {
+    min-height: 1em;
+  }
+  h1 {
+    margin: 0;
+    font-size: 100%;
+  }
+  header, .cyan {
+    background: rgba(4, 4, 4, 0.437);
+    color: #f1f1f1;
+    font-size: 4ch;
+
+  }
+  nav, .magenta {
+    background: rgba(9, 9, 9, 0.437);
+    color: #f1f1f1;
+
+  }
+  main, .yellow {
+    background: rgba(39, 38, 38, 0.437);
+    color: #f1f1f1;
+  }
+  footer, .black {
+    background: rgba(39, 38, 38, 0.437);
+    color: white;
+  }
+  a, a:visited {
+    color: inherit;
+  }
