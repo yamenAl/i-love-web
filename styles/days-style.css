@@ -17,7 +17,7 @@ body {
   footer {
 
     grid-column: span 2;
-    text-align: center;
+    margin: 0 auto;
     gap: 20px;
 
   }
@@ -32,19 +32,19 @@ body {
 
   .social-item {
     display: flex;
-    flex-direction: column; /* Stack logo and text vertically */
-    align-items: center; /* Center-align the text and logo */
+    flex-direction: column; 
+    align-items: center; 
     text-align: center;
   }
   
   .social-icon {
     width: 32px; /* Adjust icon size */
     height: 32px;
-    transition: transform 0.2s ease; /* Smooth hover effect */
+    transition: transform 0.2s ease; 
   }
 dt, dd {
     margin: 0;
-    text-align: center;
+    margin: 0 auto;
   }
   dd {
     margin-top: 8px; /* Space between the icon and label */
@@ -58,14 +58,14 @@ dt, dd {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: -1; /* Ensures video is behind content */
+    z-index: -1; 
   }
   .arrow-button {
-    background: rgba(135, 133, 133, 0.129); /* Button background */
+    background: rgba(135, 133, 133, 0.129); 
     color: #00ff9930; /* Arrow color */
     border: none; /* No border */
-    font-size: 1.5em; /* Larger arrows */
-    cursor: pointer; /* Pointer cursor for interactivity */
+    font-size: 1.5em; 
+    cursor: pointer; 
     display: flex;
     justify-content: center;
     align-items: center; /* Center arrow inside the button */
@@ -74,6 +74,6 @@ dt, dd {
   
   .arrow-button:hover {
     transform: scale(1.1); /* Slight zoom effect */
-    background: #00ff9930; /* Change background color on hover */
-    color: rgba(135, 133, 133, 0.129); /* White arrow on hover */
+    background: #00ff9930; 
+    color: rgba(135, 133, 133, 0.129); 
   }

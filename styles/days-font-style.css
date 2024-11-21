@@ -7,6 +7,11 @@
 body {
     font-family: Arial, sans-serif;
 }
-h2{
+h2:not([class]){
+    color: red;
+}
+    
+.heart, .pixel {
     font-family: 'PixelFont', Arial, sans-serif;
+    color: red;
 }
