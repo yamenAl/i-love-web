@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 26-11</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="stylesheet" href="/styles/days-style.css">
+    <link rel="stylesheet" href="/styles/days-font-style.css">
+    </style>
+  </head>
+  <body>
+    <video autoplay muted loop>
+        <source src="/assets/videos/background-video.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+  
+    <header><button class="arrow-button">←</button>
+        <h1>26-11</h1><button class="arrow-button">→</button></header>
+    <nav><a href="/index.html">main bage</a></nav>
+    
+    <main><h2>What did I do today?</h2>
+      <p>
+        Today was the CSS challenge on <a href="https://codepen.io/yamenal/pen/emOOwWx">codepen</a> for this week.<br>
+         I started with cloning, then worked on a workshop about :has().<br>
+         I practiced adding features like changing borders, showing a background photo on click, adding button shadows, and moving elements to different areas.<br>
+         Examples:<br>
+         Change background color for a list item with an h2:<br>
+            li:nth-of-type(1):has(h2) {<br>
+                background-color: var(--goud);
+            }<br>
+            Load a background image if a checkbox is checked:<br>
+            li:nth-of-type(3):has(:checked) {<br>
+                background-image: url("https://assets.codepen.io/274456/photo-grijs.png");
+                background-size: cover;
+            }<br>
+            I worked on versions 1 and 2 of the CSS challenge and plan to improve them further to learn more.
+        </p>
+      <h2>What did I learn today?</h2>
+      <p>I learned how to use the :has() selector effectively, how to style elements dynamically, and how to work with shadows, background images, and interactive elements in CSS.<br>
+         This helped me understand how to create responsive and dynamic designs.</p>
+        </main>
+    
+    <footer>
+        <dl class="social-links-inline">
+            <div class="social-item">
+              <dt>
+                <a href="https://github.com/yamenAl" target="_blank">
+                  <img src="/assets/icons/github-icon.png" alt="GitHub" class="social-icon">
+                </a>
+              </dt>
+              <dd>GitHub</dd>
+            </div>
+            <div class="social-item">
+              <dt>
+                <a href="https://dlo.mijnhva.nl/d2l/common/dialogs/quickLink/quickLink.d2l?ou=6606&type=lti&rcode=5A5AD6A8-DE14-49BB-9121-D347F48A3226-1581090&srcou=6606&launchFramed=1&framedName=Portflow" target="_blank">
+                  <img src="/assets/icons/twitter-icon.png" alt="DLO" class="social-icon">
+                </a>
+              </dt>
+              <dd>Portflow</dd>
+            </div>
+            <div class="social-item">
+              <dt>
+                <a href="https://programma.fdnd.nl/" target="_blank">
+                  <img src="/assets/icons/fdnd-icon.png" alt="Study Program" class="social-icon">
+                </a>
+              </dt>
+              <dd>Study Program</dd>
+            </div>
+        </dl>
+    </footer>
+  </body>
+</html>
