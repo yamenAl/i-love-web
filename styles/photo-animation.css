@@ -54,7 +54,7 @@
 
 
 .banner .content .model{
-    background-image: url(/assets/images/my-photo.png);
+    background-image: url(../assets/images/my-photo.png);
     width: 100%;
     height: 75vh;
     position: absolute;
