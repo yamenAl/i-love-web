@@ -38,7 +38,7 @@ body {
   }
   
   .social-icon {
-    width: 32px; /* Adjust icon size */
+    width: 32px; 
     height: 32px;
     transition: transform 0.2s ease; 
   }
@@ -47,8 +47,8 @@ dt, dd {
     margin: 0 auto;
   }
   dd {
-    margin-top: 8px; /* Space between the icon and label */
-    font-size: 12px; /* Adjust text size */
+    margin-top: 8px; 
+    font-size: 12px; 
   }
   
   video {
@@ -62,18 +62,18 @@ dt, dd {
   }
   .arrow-button {
     background: rgba(135, 133, 133, 0.129); 
-    color: #00ff9930; /* Arrow color */
-    border: none; /* No border */
+    color: #00ff9930; 
+    border: none; 
     font-size: 1.5em; 
     cursor: pointer; 
     display: flex;
     justify-content: center;
-    align-items: center; /* Center arrow inside the button */
+    align-items: center; 
     transition: transform 0.3s ease, background-color 0.3s ease; /* Smooth hover effects */
   }
   
   .arrow-button:hover {
-    transform: scale(1.1); /* Slight zoom effect */
+    transform: scale(1.1); 
     background: #00ff9930; 
     color: rgba(135, 133, 133, 0.129); 
   }
