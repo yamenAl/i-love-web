@@ -1,0 +1,8 @@
+filter i will use for my website _split
+round 
+downcase
+where
+slice
+link to github work https://shopify.github.io/liquid/filters/slice/
+here filter https://fdnd.directus.app/items/person?fields=name&filter=[_or][0][name][_starts_with]=D&filter[_or][1][name][_starts_with]=k
+here filter  for later but not working still need fix and work on
