@@ -1,0 +1,6 @@
+<article>{{ content | safe}}</article>
+<aside>
+  {% for fact in facts | randomItem %}
+    <p>{{ fact }}</p>
+  {% endfor %}
+</aside>

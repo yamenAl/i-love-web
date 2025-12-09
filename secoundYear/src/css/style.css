@@ -1,0 +1,29 @@
+/* Simple & beautiful base */
+body {
+  margin: 0;
+  padding: 6vh 4vw;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.65;
+  color: #0f172a;             
+  background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+}
+
+h1 {
+  margin: 0 0 0.5em;
+  color: #ec1111;             
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 3rem);
+  letter-spacing: -0.02em;
+}
+a{
+  text-decoration: none;
+}
+
+/*  dark mode */
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #e5e7eb;           
+    background: linear-gradient(180deg, #0b1020 0%, #0a0f1a 100%);
+  }
+  h1 { color: #ff4d4d; }
+}
