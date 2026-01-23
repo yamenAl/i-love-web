@@ -1,5 +1,5 @@
 <script>
-	import Link from '$lib/atoms/Link.svelte';
+	import Link from '$lib/components/atoms/Link.svelte';
 
 	let { year = new Date().getFullYear() } = $props();
 
