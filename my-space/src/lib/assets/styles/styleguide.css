@@ -1,0 +1,272 @@
+/* ===== Fonts ===== */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+
+/* ===== Design Tokens ===== */
+:root {
+  /* Background Colors */
+  --background-color-dark-navy: hsl(226, 48%, 6%);        /* #070b1a - Main dark background */
+  --background-color-dark-navy-light: hsl(226, 49%, 10%); /* #0c1229 - Slightly lighter dark */
+  --background-color-pure-black: hsl(0, 0%, 0%);          /* Pure black for HTML background */
+
+  /* Text Colors */
+  --text-color-white-primary: hsl(229, 100%, 95%);        /* #e7ecff - Main text color */
+  --text-color-white-muted: hsl(230, 100%, 86%);          /* #b8c1ff - Secondary/muted text */
+
+  /* Accent Colors */
+  --accent-color-blue-primary: hsl(230, 100%, 76%);       /* #86a0ff - Blue accent for links/highlights */
+  --accent-color-teal-secondary: hsl(170, 70%, 58%);      /* #4bd6c8 - Teal/cyan accent for hover states */
+
+  /* Glass Morphism Effects */
+  --glass-background-transparent: hsl(0, 0%, 100%, 0.08); /* Transparent white for glass cards */
+  --glass-border-transparent: hsl(0, 0%, 100%, 0.15);     /* Subtle border for glass cards */
+  --glass-blur-amount: 20px;                               /* Backdrop blur amount */
+
+  /* Typography - Font Sizes */
+  --font-size-hero-main-title: clamp(34px, 9vw, 120px);   /* Large hero title (h1) */
+  --font-size-hero-subtitle: clamp(16px, 4vw, 34px);      /* Hero subtitle (h2) */
+  --font-size-card-heading: clamp(22px, 6vw, 42px);       /* Card headings (h3) */
+  --font-size-card-body-text: clamp(14px, 3.6vw, 18px);   /* Card body text */
+  --font-size-small-text: clamp(0.875rem, 2vw, 1rem);     /* Small/footer text */
+
+  /* Typography - Font Family */
+  --font-family-primary: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+
+  /* Typography - Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 800;
+
+  /* Spacing Scale */
+  --spacing-extra-small: 0.3rem;   /* 4.8px - Tight spacing */
+  --spacing-small: 0.6rem;          /* 9.6px - Small gaps */
+  --spacing-medium: 1rem;           /* 16px - Standard spacing */
+  --spacing-large: 2rem;            /* 32px - Large gaps */
+  --spacing-extra-large: 4vw;       /* Responsive page padding */
+
+  /* Border Radius */
+  --border-radius-small: 8px;       /* Small rounded corners */
+  --border-radius-medium: 12px;     /* Medium rounded corners */
+  --border-radius-large: 16px;      /* Large rounded corners (cards) */
+  --border-radius-extra-large: 24px; /* Extra large rounded corners */
+
+  /* Shadows */
+  --shadow-card-elevated: 0 24px 60px hsl(0, 0%, 0%, 0.5);  /* Deep shadow for cards */
+  --shadow-subtle-elevated: 0 8px 32px hsl(0, 0%, 0%, 0.3); /* Subtle elevation shadow */
+
+  /* Animation Transitions */
+  --transition-speed-fast: 0.2s ease;     /* Fast interactions (hover) */
+  --transition-speed-normal: 0.3s ease;   /* Normal transitions */
+  --transition-speed-slow: 0.8s ease-in;  /* Slow fade-ins */
+
+  /* Z-index Layers */
+  --z-index-background: 0;     /* 3D Spline background */
+  --z-index-content: 10;       /* Main content layer */
+  --z-index-loader: 1000;      /* Loading spinner */
+}
+
+/* ===== Global Resets ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  background: var(--background-color-pure-black);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-family-primary);
+  color: var(--text-color-white-primary);
+  background: transparent;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+/* ===== Typography Base ===== */
+h1 {
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  font-size: var(--font-size-hero-main-title);
+  line-height: 1.05;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+h2 {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-hero-subtitle);
+  opacity: 0.95;
+  margin: 0;
+}
+
+h3 {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-card-heading);
+  letter-spacing: 0.2px;
+  margin: 0;
+}
+
+p {
+  color: var(--text-color-white-muted);
+  font-size: var(--font-size-card-body-text);
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== Utility Classes ===== */
+.text-primary {
+  color: var(--text-color-white-primary);
+}
+
+.text-muted {
+  color: var(--text-color-white-muted);
+}
+
+.text-accent {
+  color: var(--accent-color-blue-primary);
+}
+
+/* ===== Component Patterns ===== */
+
+/* Glass Card */
+.glass-card {
+  background: var(--glass-background-transparent);
+  border: 1px solid var(--glass-border-transparent);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--shadow-card-elevated);
+  padding: clamp(18px, 4vw, 36px);
+}
+
+/* Backdrop filter with fallback */
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+  .glass-card {
+    -webkit-backdrop-filter: blur(var(--glass-blur-amount));
+    backdrop-filter: blur(var(--glass-blur-amount));
+  }
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  .glass-card {
+    background: hsl(0, 0%, 100%, 0.15); /* Slightly more opaque background */
+  }
+}
+
+/* CTA Link */
+.cta-link {
+  color: var(--accent-color-blue-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-bold);
+  border-bottom: 2px solid hsl(230, 100%, 75%, 0.4);
+  padding-bottom: 2px;
+  transition: color var(--transition-speed-fast), 
+              transform var(--transition-speed-fast), 
+              border-color var(--transition-speed-fast);
+}
+
+.cta-link:hover {
+  color: var(--accent-color-teal-secondary);
+  transform: translateX(2px);
+  border-color: hsl(170, 70%, 60%, 0.55);
+}
+
+/* Section Padding */
+.section-padding {
+  padding-left: 4vw; /* Fallback for older browsers */
+  padding-right: 4vw; /* Fallback for older browsers */
+  padding-inline: var(--spacing-extra-large); /* Modern logical property */
+}
+
+/* Fallback for browsers without logical properties support */
+@supports not (padding-inline: 4vw) {
+  .section-padding {
+    padding-left: 4vw;
+    padding-right: 4vw;
+  }
+}
+
+/* ===== Progressive Enhancement with @supports ===== */
+
+/* Fallback for browsers without clamp() support */
+@supports not (font-size: clamp(1rem, 2vw, 3rem)) {
+  h1 {
+    font-size: 120px; /* Fixed fallback size */
+  }
+  
+  h2 {
+    font-size: 34px; /* Fixed fallback size */
+  }
+  
+  h3 {
+    font-size: 42px; /* Fixed fallback size */
+  }
+  
+  p {
+    font-size: 18px; /* Fixed fallback size */
+  }
+  
+  .glass-card {
+    padding: 36px; /* Fixed fallback padding */
+  }
+}
+
+/* Fallback for browsers without CSS custom properties (variables) */
+@supports not (--css: variables) {
+  body {
+    font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+    color: #e7ecff;
+    background: #000;
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+  
+  .cta-link {
+    color: #86a0ff;
+    font-weight: 700;
+  }
+  
+  .cta-link:hover {
+    color: #4bd6c8;
+  }
+}
+
+/* Fallback for browsers without CSS transforms */
+@supports not (transform: translateX(2px)) {
+  .cta-link:hover {
+    /* Remove transform on hover for unsupported browsers */
+    margin-left: 2px; /* Simple left margin as fallback */
+  }
+}
+
+/* Enhanced features for modern browsers */
+@supports (backdrop-filter: blur(20px)) and (font-size: clamp(1rem, 2vw, 3rem)) {
+  /* Modern browser optimizations can go here */
+  .glass-card {
+    will-change: backdrop-filter;
+  }
+}
+
+/* Safe animations for browsers that support transforms */
+@supports (transform: translateX(0)) {
+  .cta-link {
+    /* Transform is supported, animation will work smoothly */
+    transition: color var(--transition-speed-fast), 
+                transform var(--transition-speed-fast), 
+                border-color var(--transition-speed-fast);
+  }
+}
+
