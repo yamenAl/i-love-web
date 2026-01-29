@@ -1,9 +1,4 @@
 <script>
-	/**
-	 * @typedef {'primary' | 'secondary' | 'outline' | 'ghost'} ButtonVariant
-	 * @typedef {'small' | 'medium' | 'large'} ButtonSize
-	 */
-
 	let {
 		variant = 'primary',
 		size = 'medium',
@@ -42,7 +37,6 @@
 		cursor: not-allowed;
 	}
 
-	/* Sizes */
 	.btn--small {
 		padding: 0.375rem 0.75rem;
 		font-size: 0.875rem;
@@ -58,7 +52,6 @@
 		font-size: 1.125rem;
 	}
 
-	/* Variants */
 	.btn--primary {
 		background-color: #3b82f6;
 		color: white;

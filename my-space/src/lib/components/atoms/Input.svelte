@@ -1,8 +1,4 @@
 <script>
-	/**
-	 * @typedef {'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search'} InputType
-	 */
-
 	let {
 		type = 'text',
 		value = $bindable(''),

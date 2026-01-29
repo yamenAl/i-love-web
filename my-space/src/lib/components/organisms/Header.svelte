@@ -1,7 +1,7 @@
 <script>
-	import Button from '$lib/atoms/Button.svelte';
-	import Icon from '$lib/atoms/Icon.svelte';
-	import NavItem from '$lib/molecules/NavItem.svelte';
+	import Button from '$lib/components/atoms/Button.svelte';
+	import Icon from '$lib/components/atoms/Icon.svelte';
+	import NavItem from '$lib/components/molecules/NavItem.svelte';
 
 	let { siteName = 'My Space' } = $props();
 

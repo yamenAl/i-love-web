@@ -1,5 +1,5 @@
 <script>
-	import Icon from '$lib/atoms/Icon.svelte';
+	import Icon from '$lib/components/atoms/Icon.svelte';
 
 	let {
 		href = '#',

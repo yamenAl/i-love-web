@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { Application } from '@splinetool/runtime';
+	import LayeredBackground from '$lib/components/LayeredBackground.svelte';
 
 	let heroH1;
 	let heroH2;
@@ -10,7 +11,6 @@
 	let splineError = $state(false);
 
 	onMount(() => {
-		// Initialize Spline 3D background
 		if (splineCanvas) {
 			const app = new Application(splineCanvas);
 			app.load('https://prod.spline.design/O3pv-m0mZE2ZOVFc/scene.splinecode')
@@ -24,7 +24,6 @@
 				});
 		}
 
-		// Load GSAP from CDN
 		const gsapScript = document.createElement('script');
 		gsapScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
 		
@@ -47,11 +46,8 @@
 		const { gsap } = window;
 		gsap.registerPlugin(window.ScrollTrigger);
 
-		// Hero letter animations
 		animateHero(heroH1, 0.05);
 		animateHero(heroH2, 0.25);
-
-		// Horizontal scroll
 		initHorizontalScroll();
 	}
 
@@ -112,7 +108,6 @@
 			invalidateOnRefresh: true
 		});
 
-		// Animate lines in each panel
 		const panels = gsap.utils.toArray('.article-wrapper');
 		panels.forEach((panel) => {
 			const lines = panel.querySelectorAll('.line');
@@ -146,6 +141,8 @@
 </svelte:head>
 
 <!-- Loading Indicator -->
+<LayeredBackground />
+
 {#if !splineLoaded}
 	<div class="spline-loader">
 		<div class="loader-spinner"></div>
@@ -153,7 +150,6 @@
 	</div>
 {/if}
 
-<!-- Spline 3D Background -->
 <canvas bind:this={splineCanvas} id="spline-canvas" class:loaded={splineLoaded}></canvas>
 
 <main id="main-content">
@@ -164,7 +160,6 @@
 
 	<section class="test-room"></section>
 
-	<!-- Pinned horizontal section (GSAP moves this) -->
 	<div bind:this={scrollWrap} class="scroll-wrap">
 		<section class="horizontal-scroll-sec">
 			<div class="article-wrapper article-wrapper-one">
@@ -223,7 +218,6 @@
 </footer>
 
 <style>
-	/* ===== CSS Variables ===== */
 	:global(:root) {
 		--primary-bg: #070b1a;
 		--secondary-bg: #0c1229;
@@ -232,13 +226,6 @@
 		--primary-accent: #86a0ff;
 		--secondary-accent: #4bd6c8;
 		--font: "Outfit", system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-	}
-
-	/* ===== Global Reset ===== */
-	:global(*) {
-		box-sizing: border-box;
-		margin: 0;
-		padding: 0;
 	}
 
 	:global(html, body) {
@@ -258,7 +245,6 @@
 		overflow-x: hidden;
 	}
 
-	/* ===== Spline Loading Indicator ===== */
 	.spline-loader {
 		position: fixed;
 		top: 50%;
@@ -288,7 +274,6 @@
 		opacity: 0.8;
 	}
 
-	/* ===== Spline 3D Background ===== */
 	#spline-canvas {
 		position: fixed;
 		top: 50%;
@@ -307,14 +292,12 @@
 		opacity: 0.7;
 	}
 
-	/* Ensure content is above Spline */
 	#main-content {
 		position: relative;
 		z-index: 10;
 		pointer-events: none;
 	}
-	
-	/* Allow clicks on text elements */
+
 	#main-content * {
 		pointer-events: auto;
 	}
@@ -323,7 +306,6 @@
 		padding-inline: 4vw;
 	}
 
-	/* ===== Hero Section ===== */
 	.personal {
 		position: relative;
 		z-index: 10;
@@ -361,7 +343,6 @@
 		opacity: 0.95;
 	}
 
-	/* ===== Horizontal Scroll Section ===== */
 	.scroll-wrap {
 		position: relative;
 		z-index: 10;
@@ -383,7 +364,6 @@
 		min-height: 80svh;
 	}
 
-	/* ===== Text Cards ===== */
 	.text-card {
 		display: flex;
 		flex-direction: column;
@@ -428,7 +408,6 @@
 		border-color: hsl(170 70% 60% / 0.55);
 	}
 
-	/* ===== Footer ===== */
 	.site-footer {
 		position: relative;
 		z-index: 10;
@@ -439,7 +418,6 @@
 		color: var(--muted-text);
 	}
 
-	/* ===== Responsive: Horizontal Scroll on Desktop ===== */
 	@media (min-width: 768px) {
 		.personal {
 			padding-top: 25vh;

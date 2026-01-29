@@ -1,8 +1,4 @@
 <script>
-	/**
-	 * @typedef {'small' | 'medium' | 'large'} IconSize
-	 */
-
 	let {
 		name = 'menu',
 		size = 'medium',

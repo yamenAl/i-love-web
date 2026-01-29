@@ -1,5 +1,5 @@
 <script>
-	import NavItem from '$lib/molecules/NavItem.svelte';
+	import NavItem from '$lib/components/molecules/NavItem.svelte';
 
 	let {
 		items = [],
