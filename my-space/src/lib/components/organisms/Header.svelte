@@ -9,6 +9,7 @@
 
 	const navItems = [
 		{ label: 'Home', href: '/', icon: 'home' },
+		{ label: 'Spirits', href: '/sprits', icon: 'search' },
 		{ label: 'About', href: '/about', icon: 'user' },
 		{ label: 'Projects', href: '/projects', icon: 'search' }
 	];
@@ -42,11 +43,17 @@
 
 <style>
 	.header {
-		background-color: white;
-		border-bottom: 1px solid #e5e7eb;
+		background-color: hsl(0 0% 100% / 0.08);
+		backdrop-filter: blur(12px);
+		border-bottom: 1px solid hsl(0 0% 100% / 0.12);
 		position: sticky;
 		top: 0;
 		z-index: 50;
+	}
+
+	:global(html[data-theme='light']) .header {
+		background-color: hsl(0 0% 100% / 0.9);
+		border-bottom-color: #e5e7eb;
 	}
 
 	.header__container {
@@ -66,8 +73,12 @@
 	.header__logo {
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #111827;
+		color: var(--text-color-white-primary, #e7ecff);
 		text-decoration: none;
+	}
+
+	:global(html[data-theme='light']) .header__logo {
+		color: #111827;
 	}
 
 	.header__nav {
@@ -83,6 +94,10 @@
 		border: none;
 		cursor: pointer;
 		padding: 0.5rem;
+		color: var(--text-color-white-primary, #e7ecff);
+	}
+
+	:global(html[data-theme='light']) .header__menu-toggle {
 		color: #374151;
 	}
 
@@ -104,9 +119,15 @@
 			top: 100%;
 			left: 0;
 			right: 0;
-			background-color: white;
-			border-bottom: 1px solid #e5e7eb;
+			background-color: hsl(0 0% 100% / 0.08);
+			backdrop-filter: blur(12px);
+			border-bottom: 1px solid hsl(0 0% 100% / 0.12);
 			padding: 1rem;
+		}
+
+		:global(html[data-theme='light']) .header__nav--open {
+			background-color: white;
+			border-bottom-color: #e5e7eb;
 		}
 	}
 </style>

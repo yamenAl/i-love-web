@@ -30,15 +30,29 @@
 		transition: all 0.2s ease;
 	}
 
+	:global(html[data-theme='dark']) .nav-item {
+		color: var(--text-color-white-muted, #b8c1ff);
+	}
+
 	.nav-item:hover {
 		background-color: #f3f4f6;
 		color: #111827;
+	}
+
+	:global(html[data-theme='dark']) .nav-item:hover {
+		background-color: hsl(0 0% 100% / 0.1);
+		color: var(--text-color-white-primary, #e7ecff);
 	}
 
 	.nav-item--active {
 		background-color: #eff6ff;
 		color: #3b82f6;
 		font-weight: 500;
+	}
+
+	:global(html[data-theme='dark']) .nav-item--active {
+		background-color: hsl(230 100% 75% / 0.15);
+		color: var(--accent-color-blue-primary, #86a0ff);
 	}
 
 	.nav-item__text {
