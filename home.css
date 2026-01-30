@@ -1,0 +1,124 @@
+/* ===== Page background (mobile first) ===== */
+body{
+  background:
+    radial-gradient(120% 100% at 80% 0%, var(--secondary-bg), transparent 60%),
+    radial-gradient(120% 100% at 0% 100%, #0a1022, transparent 55%),
+    var(--primary-bg);
+}
+
+/* ===== Header / menu ===== */
+header{
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  z-index: 10;
+  height: 4.5rem;
+  width: 4.5rem;
+  padding: 20px;
+  background: hsl(0 0% 100% / .06);
+  border: 1px solid hsl(0 0% 100% / .12);
+  border-radius: 14px;
+
+  & nav ul{
+    display: grid;
+  }
+
+  & li{
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(0 0% 100% / .08);
+    border: 1px solid hsl(0 0% 100% / .12);
+    border-radius: 12px;
+    padding: .6rem .8rem;
+  }
+
+  & a{
+    color: var(--primary-text);
+    text-decoration: none;
+    font-weight: 600;
+  }
+}
+
+/* open states */
+.menu-open{
+  & header{
+    width: 11rem;
+    height: 11rem;
+    transition: .3s ease;
+  }
+}
+
+.nav-open{
+  & ul{
+    grid-template: 1fr 1fr / 1fr 1fr;
+    gap: 12px;
+    width: 11rem;
+    height: 11rem;
+    padding: 6px;
+  }
+}
+
+/* ===== Hero ===== */
+.personal{
+  padding-top: 7rem; /* mobile default */
+}
+
+.h1-typer-style,
+.h2-typer-style{
+  border-right: none;
+}
+
+.hero-letters{
+  & .char{
+    display: inline-block;
+    transform: translateX(1em);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+}
+
+/* ===== Sections (mobile stack) ===== */
+.scroll-wrap{
+  position: relative;
+  overflow: visible;
+}
+
+.horizontal-scroll-sec{
+  display: block;
+}
+
+.article-wrapper{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 80svh;
+}
+
+/* ===== Enhance to horizontal on wider screens ===== */
+@media (min-width: 768px){
+  .personal{
+    padding-top: 9rem;
+  }
+
+  .scroll-wrap{
+    overflow: hidden;
+    position: relative;
+    height: 100svh;
+  }
+
+  .horizontal-scroll-sec{
+    display: flex;
+    flex-direction: row;
+    height: 100svh;
+    min-width: max-content;
+    will-change: transform;
+  }
+
+  .article-wrapper{
+    flex: 0 0 100vw;
+    height: 100svh;
+  }
+}

@@ -1,88 +1,54 @@
 <script>
 	import { onMount } from 'svelte';
 	import { Application } from '@splinetool/runtime';
-	import LayeredBackground from '$lib/components/LayeredBackground.svelte';
+	import { theme } from '$lib/stores/theme.js';
 
-	let heroH1;
-	let heroH2;
+	const SPLINE_SCENE = 'https://prod.spline.design/O3pv-m0mZE2ZOVFc/scene.splinecode';
+
+	const heroName = 'Yamen Al Sharabi';
+	const heroSubtitle = 'front-end dev & learning in public';
 	let scrollWrap;
-	let splineCanvas;
+	let splineCanvas = $state(null);
 	let splineLoaded = $state(false);
 	let splineError = $state(false);
+	let splineApp = null;
 
 	onMount(() => {
-		if (splineCanvas) {
-			const app = new Application(splineCanvas);
-			app.load('https://prod.spline.design/O3pv-m0mZE2ZOVFc/scene.splinecode')
-				.then(() => {
-					splineLoaded = true;
-				})
-				.catch((error) => {
-					console.error('Spline loading error:', error);
-					splineError = true;
-					splineLoaded = true; // Hide loader even on error
-				});
-		}
+		if (!splineCanvas) return;
 
-		const gsapScript = document.createElement('script');
-		gsapScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
-		
-		const scrollTriggerScript = document.createElement('script');
-		scrollTriggerScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js';
-		
-		document.head.appendChild(gsapScript);
-		document.head.appendChild(scrollTriggerScript);
+		splineApp = new Application(splineCanvas);
+		splineApp
+			.load(SPLINE_SCENE)
+			.then(() => {
+				splineLoaded = true;
+			})
+			.catch((err) => {
+				console.error('Spline loading error:', err);
+				splineError = true;
+			});
 
-		gsapScript.onload = () => {
-			scrollTriggerScript.onload = () => {
-				initAnimations();
-			};
+		return () => {
+			splineApp = null;
 		};
 	});
 
-	function initAnimations() {
-		if (!window.gsap || !window.ScrollTrigger) return;
-		
-		const { gsap } = window;
-		gsap.registerPlugin(window.ScrollTrigger);
-
-		animateHero(heroH1, 0.05);
-		animateHero(heroH2, 0.25);
-		initHorizontalScroll();
-	}
-
-	function splitToLetters(el) {
-		if (!el || el.dataset.splitted === '1') return;
-		const text = el.textContent;
-		el.setAttribute('aria-label', text);
-		el.textContent = '';
-		[...text].forEach(ch => {
-			const span = document.createElement('span');
-			span.className = 'char';
-			span.textContent = ch === ' ' ? '\u00A0' : ch;
-			el.appendChild(span);
-		});
-		el.dataset.splitted = '1';
-	}
-
-	function animateHero(el, delay = 0) {
-		if (!el || !window.gsap) return;
-		const { gsap } = window;
-		
-		splitToLetters(el);
-		const chars = el.querySelectorAll('.char');
-		gsap.fromTo(chars,
-			{ x: '1em', opacity: 0 },
-			{
-				x: '0em',
-				opacity: 1,
-				ease: 'power3.out',
-				stagger: 0.035,
-				duration: 0.5,
-				delay
-			}
-		);
-	}
+	// GSAP only for horizontal scroll
+	onMount(() => {
+		const gsapScript = document.createElement('script');
+		gsapScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
+		const scrollTriggerScript = document.createElement('script');
+		scrollTriggerScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js';
+		document.head.appendChild(gsapScript);
+		document.head.appendChild(scrollTriggerScript);
+		gsapScript.onload = () => {
+			scrollTriggerScript.onload = () => {
+				if (window.gsap && window.ScrollTrigger) {
+					window.gsap.registerPlugin(window.ScrollTrigger);
+					initHorizontalScroll();
+				}
+			};
+		};
+	});
 
 	function initHorizontalScroll() {
 		if (!window.gsap || !window.ScrollTrigger) return;
@@ -137,25 +103,41 @@
 
 <svelte:head>
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" />
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
 </svelte:head>
 
-<!-- Loading Indicator -->
-<LayeredBackground />
-
-{#if !splineLoaded}
+{#if !splineLoaded && !splineError}
 	<div class="spline-loader">
 		<div class="loader-spinner"></div>
 		<p>Loading 3D Scene...</p>
 	</div>
 {/if}
-
 <canvas bind:this={splineCanvas} id="spline-canvas" class:loaded={splineLoaded}></canvas>
+
+<button
+	type="button"
+	class="theme-switch"
+	aria-label="Toggle light and dark mode"
+	onclick={() => theme.toggle()}
+>
+	<span class="theme-switch__track" aria-hidden="true">
+		<span class="theme-switch__thumb"></span>
+	</span>
+	<span class="theme-switch__label">{$theme === 'dark' ? 'Dark' : 'Light'}</span>
+</button>
 
 <main id="main-content">
 	<section class="personal padding-sec">
-		<h1 bind:this={heroH1} class="hero-letters home-typer-h1 h1-typer-style">Yamen Al Sharabi</h1>
-		<h2 bind:this={heroH2} class="hero-letters home-typer-h2 h2-typer-style">Creative front end developer</h2>
+		<h1 class="hero-letters home-typer-h1 h1-typer-style" aria-label={heroName}>
+			{#each heroName.split('') as char, i}
+				<span class="char" style="--char-i: {i}">{char === ' ' ? '\u00A0' : char}</span>
+			{/each}
+		</h1>
+		<h2 class="hero-letters home-typer-h2 h2-typer-style" aria-label={heroSubtitle}>
+			{#each heroSubtitle.split('') as char, i}
+				<span class="char" style="--char-i: {i}">{char === ' ' ? '\u00A0' : char}</span>
+			{/each}
+		</h2>
 	</section>
 
 	<section class="test-room"></section>
@@ -207,6 +189,7 @@
 					<h3 class="line title">See my work</h3>
 					<p class="line">Projects, experiments, and code samples — all in one place.</p>
 					<a class="line cta" href="/year/2025-2026">Explore the portfolio →</a>
+					<a class="line cta" href="/sprits">Spirits →</a>
 				</article>
 			</div>
 		</section>
@@ -225,7 +208,7 @@
 		--muted-text: #b8c1ff;
 		--primary-accent: #86a0ff;
 		--secondary-accent: #4bd6c8;
-		--font: "Outfit", system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+		--font: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
 	}
 
 	:global(html, body) {
@@ -236,6 +219,20 @@
 	:global(html) {
 		background: #000;
 	}
+
+	/* Dark mode: blue radial gradient behind 3D (blue center, black edges) like Spline preview */
+	:global(html[data-theme='dark']) {
+		background: radial-gradient(
+			ellipse 90% 90% at 50% 50%,
+			#0f1a2e 0%,
+			#0c1229 35%,
+			#070b1a 65%,
+			#000 100%
+		);
+		background-attachment: fixed;
+	}
+
+	/* Light mode: keep page dark, only 3D sprite is "light"; no extra light on whole page */
 
 	:global(body) {
 		font-family: var(--font);
@@ -285,11 +282,81 @@
 		pointer-events: none;
 		opacity: 0;
 		display: block;
-		transition: opacity 0.8s ease-in;
+		transition: opacity 0.8s ease-in, filter 0.4s ease;
 	}
 
 	#spline-canvas.loaded {
 		opacity: 0.7;
+	}
+
+	:global(html[data-theme='dark']) #spline-canvas.loaded {
+		opacity: 0.65;
+		filter: brightness(0.95) contrast(1.02);
+	}
+
+	:global(html[data-theme='light']) #spline-canvas.loaded {
+		opacity: 0.88;
+		filter: brightness(1.12) contrast(1.08) saturate(1.1);
+	}
+
+	.theme-switch {
+		position: fixed;
+		top: 1rem;
+		right: 1rem;
+		z-index: 100;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		background: var(--glass-background-transparent, hsl(0 0% 100% / 0.08));
+		border: 1px solid var(--glass-border-transparent, hsl(0 0% 100% / 0.15));
+		border-radius: 999px;
+		color: var(--primary-text);
+		font-family: var(--font);
+		font-size: 0.875rem;
+		cursor: pointer;
+		pointer-events: auto;
+		transition: background 0.2s, border-color 0.2s, color 0.2s;
+	}
+
+	.theme-switch:hover {
+		background: hsl(0 0% 100% / 0.12);
+		border-color: hsl(0 0% 100% / 0.25);
+	}
+
+	.theme-switch__track {
+		display: block;
+		width: 2.5rem;
+		height: 1.25rem;
+		background: hsl(0 0% 100% / 0.2);
+		border-radius: 999px;
+		position: relative;
+		transition: background 0.2s;
+	}
+
+	.theme-switch__thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 1rem;
+		height: 1rem;
+		background: #fff;
+		border-radius: 50%;
+		transition: transform 0.2s ease;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	}
+
+	:global(html[data-theme='light']) .theme-switch__thumb {
+		transform: translateX(1.25rem);
+	}
+
+	:global(html[data-theme='dark']) .theme-switch__thumb {
+		transform: translateX(0);
+	}
+
+	.theme-switch__label {
+		min-width: 2.5rem;
+		text-align: left;
 	}
 
 	#main-content {
@@ -309,12 +376,13 @@
 	.personal {
 		position: relative;
 		z-index: 10;
-		padding-top: 30vh;
+		padding-top: 32vh;
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		text-align: center;
+		gap: 0.5rem;
 	}
 
 	.h1-typer-style,
@@ -322,25 +390,43 @@
 		border-right: none;
 	}
 
+	@keyframes nameReveal {
+		from {
+			transform: translateX(1em);
+			opacity: 0;
+		}
+		to {
+			transform: translateX(0);
+			opacity: 1;
+		}
+	}
+
 	.hero-letters :global(.char) {
 		display: inline-block;
-		transform: translateX(1em);
 		opacity: 0;
-		will-change: transform, opacity;
+		animation: nameReveal 0.5s ease-out forwards;
+	}
+
+	.home-typer-h1 :global(.char) {
+		animation-delay: calc(50ms + var(--char-i, 0) * 35ms);
+	}
+
+	.home-typer-h2 :global(.char) {
+		animation-delay: calc(250ms + var(--char-i, 0) * 35ms);
 	}
 
 	:global(h1) {
-		font-weight: 800;
-		text-transform: uppercase;
-		font-size: clamp(34px, 9vw, 120px);
-		line-height: 1.05;
-		letter-spacing: 0.5px;
+		font-weight: 700;
+		font-size: clamp(2rem, 8vw, 4.5rem);
+		line-height: 1.15;
+		letter-spacing: 0.02em;
 	}
 
 	:global(h2) {
-		font-weight: 600;
-		font-size: clamp(16px, 4vw, 34px);
-		opacity: 0.95;
+		font-weight: 500;
+		font-size: clamp(1rem, 3.5vw, 1.5rem);
+		opacity: 0.9;
+		letter-spacing: 0.01em;
 	}
 
 	.scroll-wrap {
@@ -367,23 +453,23 @@
 	.text-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
-		width: min(92vw, 840px);
+		gap: 0.75rem;
+		width: min(92vw, 800px);
 		margin: 0 auto;
-		padding: clamp(18px, 4vw, 36px);
-		background: hsl(0 0% 100% / 0.08);
-		border: 1px solid hsl(0 0% 100% / 0.15);
-		border-radius: 16px;
-		box-shadow: 0 24px 60px hsl(0 0% 0% / 0.5);
-		backdrop-filter: blur(20px);
+		padding: clamp(1.25rem, 4vw, 2rem);
+		background: hsl(0 0% 100% / 0.07);
+		border: 1px solid hsl(0 0% 100% / 0.12);
+		border-radius: 20px;
+		box-shadow: 0 16px 40px hsl(0 0% 0% / 0.35);
+		backdrop-filter: blur(16px);
 		position: relative;
 		z-index: 10;
 	}
 
 	.text-card .title {
-		font-size: clamp(22px, 6vw, 42px);
-		font-weight: 800;
-		letter-spacing: 0.2px;
+		font-size: clamp(1.35rem, 5vw, 2rem);
+		font-weight: 600;
+		letter-spacing: 0.01em;
 	}
 
 	.text-card p {

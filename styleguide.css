@@ -1,0 +1,107 @@
+@font-face {
+    font-family: 'PixelFont';
+    src: url(/i-love-web/assets/font/PixelFont-Regular.otf) format('opentype');
+}
+/* ===== Base tokens (clear names) ===== */
+:root{
+  --primary-bg: #070b1a;
+  --secondary-bg: #0c1229;
+
+  --primary-text: #e7ecff;
+  --muted-text: #b8c1ff;
+
+  --primary-accent: #86a0ff;
+  --secondary-accent: #4bd6c8;
+
+  --font: "Outfit", system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+}
+
+/* ===== Reset ===== */
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body{
+  height: 100%;
+}
+
+body{
+  font-family: var(--font);
+  color: var(--primary-text);
+  background: var(--primary-bg); /* pages can override */
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+.padding-sec{
+  padding-inline: 4vw;
+}
+
+/* ===== Typography ===== */
+h1{
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(34px, 9vw, 120px);
+  line-height: 1.05;
+  letter-spacing: .5px;
+}
+
+h2{
+  font-weight: 600;
+  font-size: clamp(16px, 4vw, 34px);
+  opacity: .95;
+}
+
+/* ===== Text card ===== */
+.text-card{
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  width: min(92vw, 840px);
+  padding: clamp(18px, 4vw, 36px);
+  background: hsl(0 0% 100% / .04);
+  border: 1px solid hsl(0 0% 100% / .12);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px hsl(0 0% 0% / .35);
+  backdrop-filter: blur(6px);
+
+  /* nested descendants */
+  & .title{
+    font-size: clamp(22px, 6vw, 42px);
+    font-weight: 800;
+    letter-spacing: .2px;
+  }
+
+  & p{
+    color: var(--muted-text);
+    font-size: clamp(14px, 3.6vw, 18px);
+  }
+
+  & .cta{
+    align-self: flex-start;
+    color: var(--primary-accent);
+    text-decoration: none;
+    font-weight: 700;
+    border-bottom: 2px solid hsl(230 100% 75% / .4);
+    padding-bottom: 2px;
+    margin-top: .3rem;
+    transition: color .2s ease, transform .2s ease, border-color .2s ease;
+
+    &:hover{
+      color: var(--secondary-accent);
+      transform: translateX(2px);
+      border-color: hsl(170 70% 60% / .55);
+    }
+  }
+}
+
+/* ===== Footer ===== */
+footer{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 4vw;
+  color: var(--muted-text);
+}
