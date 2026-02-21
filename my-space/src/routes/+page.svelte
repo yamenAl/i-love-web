@@ -1,531 +1,329 @@
 <script>
 	import { onMount } from 'svelte';
-	import { Application } from '@splinetool/runtime';
 	import { theme } from '$lib/stores/theme.js';
+	import SplineSceneDark from '$lib/components/SplineSceneDark.svelte';
+	import SplineSceneLight from '$lib/components/SplineSceneLight.svelte';
 
-	const SPLINE_SCENE = 'https://prod.spline.design/O3pv-m0mZE2ZOVFc/scene.splinecode';
+	// gsap loads from cdn so we wait max 8s then give up
+	const GSAP_TIMEOUT_MS = 8000;
 
 	const heroName = 'Yamen Al Sharabi';
 	const heroSubtitle = 'front-end dev & learning in public';
-	let scrollWrap;
-	let splineCanvas = $state(null);
-	let splineLoaded = $state(false);
-	let splineError = $state(false);
-	let splineApp = null;
 
+	let horizontalScrollContainer;
+	let gsapReady = $state(false);
+	let hasJs = $state(false);
+
+	// set hasJs and load gsap from cdn, then init horizontal scroll
 	onMount(() => {
-		if (!splineCanvas) return;
-
-		splineApp = new Application(splineCanvas);
-		splineApp
-			.load(SPLINE_SCENE)
-			.then(() => {
-				splineLoaded = true;
-			})
-			.catch((err) => {
-				console.error('Spline loading error:', err);
-				splineError = true;
-			});
-
-		return () => {
-			splineApp = null;
-		};
-	});
-
-	// GSAP only for horizontal scroll
-	onMount(() => {
-		const gsapScript = document.createElement('script');
-		gsapScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
-		const scrollTriggerScript = document.createElement('script');
-		scrollTriggerScript.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js';
-		document.head.appendChild(gsapScript);
-		document.head.appendChild(scrollTriggerScript);
-		gsapScript.onload = () => {
-			scrollTriggerScript.onload = () => {
-				if (window.gsap && window.ScrollTrigger) {
-					window.gsap.registerPlugin(window.ScrollTrigger);
-					initHorizontalScroll();
-				}
+		hasJs = true;
+		let timedOut = false;
+		const timeout = setTimeout(() => { timedOut = true; }, GSAP_TIMEOUT_MS);
+		const gsapScriptElement = document.createElement('script');
+		gsapScriptElement.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
+		gsapScriptElement.onerror = () => { clearTimeout(timeout); };
+		gsapScriptElement.onload = () => {
+			const scrollTriggerScriptElement = document.createElement('script');
+			scrollTriggerScriptElement.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js';
+			scrollTriggerScriptElement.onerror = () => { clearTimeout(timeout); };
+			scrollTriggerScriptElement.onload = () => {
+				if (timedOut || !window.gsap || !window.ScrollTrigger) { clearTimeout(timeout); return; }
+				clearTimeout(timeout);
+				window.gsap.registerPlugin(window.ScrollTrigger);
+				requestAnimationFrame(() => setTimeout(() => { gsapReady = initHorizontalScroll() === true; }, 100));
 			};
+			document.head.appendChild(scrollTriggerScriptElement);
 		};
+		document.head.appendChild(gsapScriptElement);
 	});
 
+	// pin the scroll area and move it horizontally; animate each card's lines on the way
 	function initHorizontalScroll() {
-		if (!window.gsap || !window.ScrollTrigger) return;
-		
+		if (!window.gsap || !window.ScrollTrigger) return false;
 		const { gsap, ScrollTrigger } = window;
-		const track = document.querySelector('.horizontal-scroll-sec');
-		const wrap = scrollWrap;
-		
-		if (!track || !wrap) return;
-
-		const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
-		if (distance() <= 1) return;
-
-		const scroller = gsap.to(track, { x: () => -distance(), ease: 'none' });
-
-		ScrollTrigger.create({
-			trigger: wrap,
-			start: 'top top',
-			end: () => `+=${distance()}`,
-			pin: true,
-			animation: scroller,
-			scrub: 1,
-			invalidateOnRefresh: true
+		const horizontalScrollTrack = document.querySelector('.horizontal-scroll-section');
+		if (!horizontalScrollTrack || !horizontalScrollContainer) return false;
+		const scrollDistance = () => Math.max(0, horizontalScrollTrack.scrollWidth - window.innerWidth);
+		if (scrollDistance() <= 1) return false;
+		const horizontalScroller = gsap.to(horizontalScrollTrack, { x: () => -scrollDistance(), ease: 'none' });
+		ScrollTrigger.create({ trigger: horizontalScrollContainer, start: 'top top', end: () => `+=${scrollDistance()}`, pin: true, animation: horizontalScroller, scrub: 1, invalidateOnRefresh: true });
+		gsap.utils.toArray('.scroll-card-wrapper').forEach((scrollCard) => {
+			const cardLines = scrollCard.querySelectorAll('.scroll-card__line');
+			if (!cardLines.length) return;
+			gsap.fromTo(cardLines, { xPercent: 40, opacity: 0 }, { xPercent: 0, opacity: 1, ease: 'power2.out', stagger: 0.12, scrollTrigger: { trigger: scrollCard, containerAnimation: horizontalScroller, start: 'left center', end: 'center center', scrub: true } });
 		});
-
-		const panels = gsap.utils.toArray('.article-wrapper');
-		panels.forEach((panel) => {
-			const lines = panel.querySelectorAll('.line');
-			if (!lines.length) return;
-
-			gsap.fromTo(lines,
-				{ xPercent: 40, opacity: 0 },
-				{
-					xPercent: 0,
-					opacity: 1,
-					ease: 'power2.out',
-					stagger: 0.12,
-					scrollTrigger: {
-						trigger: panel,
-						containerAnimation: scroller,
-						start: 'left center',
-						end: 'center center',
-						scrub: true
-					}
-				}
-			);
-		});
-
 		ScrollTrigger.refresh();
+		window.addEventListener('resize', () => ScrollTrigger.refresh());
+		return true;
 	}
 </script>
 
-<svelte:head>
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-</svelte:head>
 
-{#if !splineLoaded && !splineError}
-	<div class="spline-loader">
-		<div class="loader-spinner"></div>
-		<p>Loading 3D Scene...</p>
+{#if hasJs}
+	<div class="spline-container" aria-hidden="false">
+		{#if $theme === 'dark'}
+			<SplineSceneDark />
+		{:else}
+			<SplineSceneLight />
+		{/if}
 	</div>
 {/if}
-<canvas bind:this={splineCanvas} id="spline-canvas" class:loaded={splineLoaded}></canvas>
 
-<button
-	type="button"
-	class="theme-switch"
-	aria-label="Toggle light and dark mode"
-	onclick={() => theme.toggle()}
->
-	<span class="theme-switch__track" aria-hidden="true">
-		<span class="theme-switch__thumb"></span>
-	</span>
-	<span class="theme-switch__label">{$theme === 'dark' ? 'Dark' : 'Light'}</span>
-</button>
+<noscript>
+	<p class="noscript-message">Some features (3D scene, scroll animation) need JavaScript. Content below works without it.</p>
+</noscript>
 
-<main id="main-content">
-	<section class="personal padding-sec">
-		<h1 class="hero-letters home-typer-h1 h1-typer-style" aria-label={heroName}>
-			{#each heroName.split('') as char, i}
-				<span class="char" style="--char-i: {i}">{char === ' ' ? '\u00A0' : char}</span>
+<main class="main">
+	<section class="hero">
+		<h1 class="hero__title hero__letters hero__title--animated" aria-label={heroName}>
+			{#each heroName.split('') as letter, letterIndex}
+				<span class="hero__letter" style="--hero-letter-index: {letterIndex}">{letter === ' ' ? '\u00A0' : letter}</span>
 			{/each}
 		</h1>
-		<h2 class="hero-letters home-typer-h2 h2-typer-style" aria-label={heroSubtitle}>
-			{#each heroSubtitle.split('') as char, i}
-				<span class="char" style="--char-i: {i}">{char === ' ' ? '\u00A0' : char}</span>
+		<h2 class="hero__subtitle hero__letters hero__subtitle--animated" aria-label={heroSubtitle}>
+			{#each heroSubtitle.split('') as letter, letterIndex}
+				<span class="hero__letter" style="--hero-letter-index: {letterIndex}">{letter === ' ' ? '\u00A0' : letter}</span>
 			{/each}
 		</h2>
 	</section>
 
-	<section class="test-room"></section>
-
-	<div bind:this={scrollWrap} class="scroll-wrap">
-		<section class="horizontal-scroll-sec">
-			<div class="article-wrapper article-wrapper-one">
-				<article class="text-card">
-					<h3 class="line title">Why the web?</h3>
-					<p class="line">Because the browser is for everyone. That's why I build here.</p>
-					<p class="line">I care about fast loads, clear content, and tiny details that feel good.</p>
+	<div bind:this={horizontalScrollContainer} class="horizontal-scroll-container" class:horizontal-scroll-container--fallback={!gsapReady}>
+		<section class="horizontal-scroll-section">
+			<div class="scroll-card-wrapper">
+				<article class="scroll-card glass-card">
+					<h3 class="scroll-card__line">Why the web?</h3>
+					<p class="scroll-card__line">Because the browser is for everyone. That's why I build here.</p>
+					<p class="scroll-card__line">I care about fast loads, clear content, and tiny details that feel good.</p>
 				</article>
 			</div>
-
-			<div class="article-wrapper article-wrapper-two">
-				<article class="text-card">
-					<h3 class="line title">Hi, I'm Yamen</h3>
-					<p class="line">Web developer in progress</p>
-					<p class="line">I care about friendly UX, fast loads, and code you won't hate later.</p>
+			<div class="scroll-card-wrapper">
+				<article class="scroll-card glass-card">
+					<h3 class="scroll-card__line">Hi, I'm Yamen</h3>
+					<p class="scroll-card__line">Web developer in progress</p>
+					<p class="scroll-card__line">I care about friendly UX, fast loads, and code you won't hate later.</p>
 				</article>
 			</div>
-
-			<div class="article-wrapper article-wrapper-two">
-				<article class="text-card">
-					<h3 class="line title">What I can make for you</h3>
-					<p class="line">Landing pages, small web apps, dashboards, and reusable components.</p>
-					<p class="line">From idea to deploy: design, build, host, and a clean handover.</p>
+			<div class="scroll-card-wrapper">
+				<article class="scroll-card glass-card">
+					<h3 class="scroll-card__line">What I can make for you</h3>
+					<p class="scroll-card__line">Landing pages, small web apps, dashboards, and reusable components.</p>
+					<p class="scroll-card__line">From idea to deploy: design, build, host, and a clean handover.</p>
 				</article>
 			</div>
-
-			<div class="article-wrapper article-wrapper-three">
-				<article class="text-card">
-					<h3 class="line title">How I work</h3>
-					<p class="line">Sketch → prototype → code → feedback.</p>
-					<p class="line">I'm still in a course, so I bring fresh patterns, curiosity, and momentum.</p>
+			<div class="scroll-card-wrapper">
+				<article class="scroll-card glass-card">
+					<h3 class="scroll-card__line">How I work</h3>
+					<p class="scroll-card__line">Sketch → prototype → code → feedback.</p>
+					<p class="scroll-card__line">I'm still in a course, so I bring fresh patterns, curiosity, and momentum.</p>
 				</article>
 			</div>
-
-			<div class="article-wrapper article-wrapper-four">
-				<article class="text-card">
-					<h3 class="line title">Principles I work by</h3>
-					<p class="line">Content first. Accessibility by default. Real-user metrics over guesses.</p>
-					<p class="line">Simple stacks: HTML, CSS, JavaScript — plus modern tooling when it helps.</p>
+			<div class="scroll-card-wrapper">
+				<article class="scroll-card glass-card">
+					<h3 class="scroll-card__line">Principles I work by</h3>
+					<p class="scroll-card__line">Content first. Accessibility by default. Real-user metrics over guesses.</p>
+					<p class="scroll-card__line">Simple stacks: HTML, CSS, JavaScript — plus modern tooling when it helps.</p>
 				</article>
 			</div>
-
-			<div class="article-wrapper article-wrapper-five">
-				<article class="text-card">
-					<h3 class="line title">See my work</h3>
-					<p class="line">Projects, experiments, and code samples — all in one place.</p>
-					<a class="line cta" href="/year/2025-2026">Explore the portfolio →</a>
-					<a class="line cta" href="/sprits">Spirits →</a>
+			<div class="scroll-card-wrapper">
+				<article class="scroll-card glass-card">
+					<h3 class="scroll-card__line">See my work</h3>
+					<p class="scroll-card__line">Projects, experiments, and code samples — all in one place.</p>
+					<a class="scroll-card__line cta-link" href="/year/2025-2026">Explore the portfolio →</a>
+					<a class="scroll-card__line cta-link" href="/sprits">Spirits →</a>
 				</article>
 			</div>
 		</section>
 	</div>
 </main>
 
-<footer class="site-footer padding-sec">
+<footer class="site-footer section-padding text-muted">
 	<p>© {new Date().getFullYear()} Yamen Al Sharabi. All rights reserved.</p>
 </footer>
 
 <style>
-	:global(:root) {
-		--primary-bg: #070b1a;
-		--secondary-bg: #0c1229;
-		--primary-text: #e7ecff;
-		--muted-text: #b8c1ff;
-		--primary-accent: #86a0ff;
-		--secondary-accent: #4bd6c8;
-		--font: "DM Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+	/* mobile first: default is small screen, then we override at 768px (tablet) */
+	@keyframes nameReveal {
+		from { transform: translateX(1em); opacity: 0; }
+		to { transform: translateX(0); opacity: 1; }
 	}
 
-	:global(html, body) {
-		height: 100%;
-		background: transparent;
-	}
-
-	:global(html) {
-		background: #000;
-	}
-
-	/* Dark mode: blue radial gradient behind 3D (blue center, black edges) like Spline preview */
-	:global(html[data-theme='dark']) {
-		background: radial-gradient(
-			ellipse 90% 90% at 50% 50%,
-			#0f1a2e 0%,
-			#0c1229 35%,
-			#070b1a 65%,
-			#000 100%
-		);
-		background-attachment: fixed;
-	}
-
-	/* Light mode: keep page dark, only 3D sprite is "light"; no extra light on whole page */
-
-	:global(body) {
-		font-family: var(--font);
-		color: var(--primary-text);
-		background: transparent;
-		line-height: 1.55;
-		overflow-x: hidden;
-	}
-
-	.spline-loader {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		z-index: 1000;
-		text-align: center;
-		color: var(--primary-text);
-	}
-
-	.loader-spinner {
-		width: 50px;
-		height: 50px;
-		margin: 0 auto 1rem;
-		border: 3px solid hsl(0 0% 100% / 0.1);
-		border-top-color: var(--primary-accent);
-		border-radius: 50%;
-		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		to { transform: rotate(360deg); }
-	}
-
-	.spline-loader p {
-		font-size: 0.875rem;
-		opacity: 0.8;
-	}
-
-	#spline-canvas {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 100vw;
-		height: 100vh;
-		z-index: 0;
+	/* spline wrapper: no position/transform so the canvas stays centered in viewport */
+	.spline-container {
+		position: static;
+		z-index: var(--z-index-background);
 		pointer-events: none;
-		opacity: 0;
-		display: block;
-		transition: opacity 0.8s ease-in, filter 0.4s ease;
 	}
 
-	#spline-canvas.loaded {
-		opacity: 0.7;
-	}
-
-	:global(html[data-theme='dark']) #spline-canvas.loaded {
-		opacity: 0.65;
-		filter: brightness(0.95) contrast(1.02);
-	}
-
-	:global(html[data-theme='light']) #spline-canvas.loaded {
-		opacity: 0.88;
-		filter: brightness(1.12) contrast(1.08) saturate(1.1);
-	}
-
-	.theme-switch {
+	/* when js is off we show this at bottom */
+	.noscript-message {
 		position: fixed;
-		top: 1rem;
-		right: 1rem;
+		bottom: var(--spacing-medium);
+		left: var(--spacing-medium);
+		right: var(--spacing-medium);
 		z-index: 100;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		background: var(--glass-background-transparent, hsl(0 0% 100% / 0.08));
-		border: 1px solid var(--glass-border-transparent, hsl(0 0% 100% / 0.15));
-		border-radius: 999px;
-		color: var(--primary-text);
-		font-family: var(--font);
-		font-size: 0.875rem;
-		cursor: pointer;
-		pointer-events: auto;
-		transition: background 0.2s, border-color 0.2s, color 0.2s;
+		padding: var(--spacing-small) var(--spacing-medium);
+		background: hsl(0 0% 0% / 0.8);
+		color: var(--text-color-white-primary);
+		font-size: var(--font-size-small-text);
+		text-align: center;
+		border-radius: var(--border-radius-small);
+		font-family: var(--font-family-primary);
 	}
 
-	.theme-switch:hover {
-		background: hsl(0 0% 100% / 0.12);
-		border-color: hsl(0 0% 100% / 0.25);
-	}
-
-	.theme-switch__track {
-		display: block;
-		width: 2.5rem;
-		height: 1.25rem;
-		background: hsl(0 0% 100% / 0.2);
-		border-radius: 999px;
+	.main {
 		position: relative;
-		transition: background 0.2s;
-	}
-
-	.theme-switch__thumb {
-		position: absolute;
-		top: 2px;
-		left: 2px;
-		width: 1rem;
-		height: 1rem;
-		background: #fff;
-		border-radius: 50%;
-		transition: transform 0.2s ease;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-	}
-
-	:global(html[data-theme='light']) .theme-switch__thumb {
-		transform: translateX(1.25rem);
-	}
-
-	:global(html[data-theme='dark']) .theme-switch__thumb {
-		transform: translateX(0);
-	}
-
-	.theme-switch__label {
-		min-width: 2.5rem;
-		text-align: left;
-	}
-
-	#main-content {
-		position: relative;
-		z-index: 10;
+		z-index: var(--z-index-content);
 		pointer-events: none;
 	}
-
-	#main-content * {
+	.main * {
 		pointer-events: auto;
 	}
 
-	.padding-sec {
-		padding-inline: 4vw;
-	}
-
-	.personal {
+	/* hero: name + subtitle, centered, letters animate in with nameReveal */
+	.hero {
 		position: relative;
-		z-index: 10;
-		padding-top: 32vh;
+		z-index: var(--z-index-content);
 		min-height: 100vh;
+		min-height: 100dvh;
+		padding: 28vh 1rem var(--spacing-large);
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		text-align: center;
-		gap: 0.5rem;
+		gap: var(--spacing-small);
+	}
+	.hero__title {
+		font-size: var(--font-size-hero-main-title);
+		font-weight: var(--font-weight-bold);
+		line-height: 1.15;
+		letter-spacing: 0.02em;
+		color: var(--text-color-white-primary);
+		margin: 0;
+	}
+	.hero__subtitle {
+		font-size: var(--font-size-hero-subtitle);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: 0.01em;
+		color: var(--text-color-white-primary);
+		opacity: 0.9;
+		margin: 0;
 	}
 
-	.h1-typer-style,
-	.h2-typer-style {
-		border-right: none;
-	}
-
-	@keyframes nameReveal {
-		from {
-			transform: translateX(1em);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
-	}
-
-	.hero-letters :global(.char) {
+	.hero__letters .hero__letter {
 		display: inline-block;
 		opacity: 0;
 		animation: nameReveal 0.5s ease-out forwards;
 	}
-
-	.home-typer-h1 :global(.char) {
-		animation-delay: calc(50ms + var(--char-i, 0) * 35ms);
+	.hero__title--animated .hero__letter {
+		animation-delay: calc(50ms + var(--hero-letter-index, 0) * 35ms);
+	}
+	.hero__subtitle--animated .hero__letter {
+		animation-delay: calc(250ms + var(--hero-letter-index, 0) * 35ms);
+	}
+	@supports not (animation-duration: 1s) {
+		.hero__letters .hero__letter { opacity: 1; animation: none; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.hero__letters .hero__letter { opacity: 1; animation: none; }
 	}
 
-	.home-typer-h2 :global(.char) {
-		animation-delay: calc(250ms + var(--char-i, 0) * 35ms);
-	}
-
-	:global(h1) {
-		font-weight: 700;
-		font-size: clamp(2rem, 8vw, 4.5rem);
-		line-height: 1.15;
-		letter-spacing: 0.02em;
-	}
-
-	:global(h2) {
-		font-weight: 500;
-		font-size: clamp(1rem, 3.5vw, 1.5rem);
-		opacity: 0.9;
-		letter-spacing: 0.01em;
-	}
-
-	.scroll-wrap {
+	/* horizontal scroll: on mobile it's just normal scroll; desktop we use gsap to fake horizontal */
+	.horizontal-scroll-container {
 		position: relative;
-		z-index: 10;
+		z-index: var(--z-index-content);
 		overflow: visible;
 	}
-
-	.horizontal-scroll-sec {
-		display: block;
-		position: relative;
-		z-index: 10;
+	.horizontal-scroll-container--fallback {
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+	}
+	.horizontal-scroll-container--fallback .horizontal-scroll-section {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
 	}
 
-	.article-wrapper {
+	.horizontal-scroll-section {
+		position: relative;
+		z-index: var(--z-index-content);
+		display: block;
+	}
+
+	.scroll-card-wrapper {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		position: relative;
-		z-index: 10;
+		z-index: var(--z-index-content);
 		min-height: 80svh;
+		min-height: 80dvh;
+		padding: var(--spacing-medium) 0;
 	}
 
-	.text-card {
+	.scroll-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		width: min(92vw, 800px);
+		gap: var(--spacing-small);
+		width: 100%;
+		max-width: 92vw;
 		margin: 0 auto;
-		padding: clamp(1.25rem, 4vw, 2rem);
-		background: hsl(0 0% 100% / 0.07);
-		border: 1px solid hsl(0 0% 100% / 0.12);
-		border-radius: 20px;
-		box-shadow: 0 16px 40px hsl(0 0% 0% / 0.35);
-		backdrop-filter: blur(16px);
 		position: relative;
-		z-index: 10;
+		z-index: var(--z-index-content);
 	}
-
-	.text-card .title {
-		font-size: clamp(1.35rem, 5vw, 2rem);
-		font-weight: 600;
-		letter-spacing: 0.01em;
-	}
-
-	.text-card p {
-		color: var(--muted-text);
-		font-size: clamp(14px, 3.6vw, 18px);
-	}
-
-	.text-card .cta {
+	.scroll-card .cta-link {
 		align-self: flex-start;
-		color: var(--primary-accent);
-		text-decoration: none;
-		font-weight: 700;
-		border-bottom: 2px solid hsl(230 100% 75% / 0.4);
-		padding-bottom: 2px;
-		margin-top: 0.3rem;
-		transition: color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-	}
-
-	.text-card .cta:hover {
-		color: var(--secondary-accent);
-		transform: translateX(2px);
-		border-color: hsl(170 70% 60% / 0.55);
+		margin-top: var(--spacing-extra-small);
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
 	}
 
 	.site-footer {
 		position: relative;
-		z-index: 10;
+		z-index: var(--z-index-content);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 2rem 4vw;
-		color: var(--muted-text);
+		padding: var(--spacing-large) 0;
+	}
+	.site-footer p {
+		margin: 0;
 	}
 
+	/* from 768px up: real horizontal scroll (gsap pins and moves), cards side by side */
 	@media (min-width: 768px) {
-		.personal {
+		.noscript-message {
+			left: auto;
+			right: var(--spacing-medium);
+			max-width: 20rem;
+		}
+		.hero {
 			padding-top: 25vh;
+			padding-left: var(--spacing-extra-large);
+			padding-right: var(--spacing-extra-large);
 		}
-
-		.scroll-wrap {
+		.horizontal-scroll-container {
 			overflow: hidden;
-			position: relative;
 			height: 100svh;
+			height: 100dvh;
 		}
-
-		.horizontal-scroll-sec {
+		.horizontal-scroll-section {
 			display: flex;
 			flex-direction: row;
 			height: 100svh;
+			height: 100dvh;
 			min-width: max-content;
 			will-change: transform;
 		}
-
-		.article-wrapper {
+		.scroll-card-wrapper {
 			flex: 0 0 100vw;
 			height: 100svh;
+			height: 100dvh;
+			padding: 0;
+		}
+		.scroll-card {
+			max-width: min(92vw, 800px);
 		}
 	}
 </style>

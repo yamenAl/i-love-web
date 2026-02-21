@@ -6,6 +6,15 @@
 </script>
 
 
-<div class="background-wrap">
-		<LayeredBackground />
-	</div>
+<div class="spirit-detail__background">
+	<LayeredBackground />
+</div>
+
+<style>
+	.spirit-detail__background {
+		position: fixed;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+	}
+</style>

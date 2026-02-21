@@ -1,0 +1,35 @@
+/* tailwind: base styles + components + utilities (we use @apply in base layer) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* base page: full height, dark bg; dark theme gets a nice gradient */
+@layer base {
+	html,
+	body {
+		@apply h-full bg-transparent;
+	}
+	html {
+		@apply bg-black;
+	}
+	html[data-theme='dark'] {
+		background: radial-gradient(
+			ellipse 90% 90% at 50% 50%,
+			#0f1a2e 0%,
+			#0c1229 35%,
+			#070b1a 65%,
+			#000 100%
+		);
+		background-attachment: fixed;
+	}
+	body {
+		@apply font-sans text-primary-text leading-[1.55] bg-transparent overflow-x-hidden;
+	}
+}
+
+/* old safari etc: no backdrop-filter so we use a solid-ish bg for cards */
+@supports not (backdrop-filter: blur(1px)) {
+	.scroll-card {
+		background: hsl(0 0% 100% / 0.15);
+	}
+}

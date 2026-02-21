@@ -3,6 +3,7 @@ import { writable } from 'svelte/store';
 const STORAGE_KEY = 'theme';
 const DEFAULT = 'light';
 
+// read saved theme from localStorage (or default) – only in browser
 function getInitial() {
 	if (typeof document === 'undefined') return DEFAULT;
 	try {
@@ -10,6 +11,16 @@ function getInitial() {
 		if (stored === 'light' || stored === 'dark') return stored;
 	} catch (_) {}
 	return DEFAULT;
+}
+
+// sync theme to localStorage and html (so css can use data-theme)
+function syncTheme(value) {
+	try {
+		localStorage.setItem(STORAGE_KEY, value);
+	} catch (_) {}
+	if (typeof document !== 'undefined') {
+		document.documentElement.dataset.theme = value;
+	}
 }
 
 function createThemeStore() {
@@ -20,22 +31,12 @@ function createThemeStore() {
 		set: (value) => {
 			if (value !== 'light' && value !== 'dark') return;
 			set(value);
-			try {
-				localStorage.setItem(STORAGE_KEY, value);
-			} catch (_) {}
-			if (typeof document !== 'undefined') {
-				document.documentElement.dataset.theme = value;
-			}
+			syncTheme(value);
 		},
 		toggle: () => {
 			update((v) => {
 				const next = v === 'light' ? 'dark' : 'light';
-				try {
-					localStorage.setItem(STORAGE_KEY, next);
-				} catch (_) {}
-				if (typeof document !== 'undefined') {
-					document.documentElement.dataset.theme = next;
-				}
+				syncTheme(next);
 				return next;
 			});
 		}

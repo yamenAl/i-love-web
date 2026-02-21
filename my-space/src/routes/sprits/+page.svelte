@@ -5,25 +5,25 @@
 	let { data } = $props();
 </script>
 
-<div class="background-wrap">
+<div class="spirits-page__background">
 	<LayeredBackground />
 </div>
 
 <div class="spirits-page">
-	<header class="spirits-header">
-		<a href="/" class="back-link">← Back to Home</a>
-		<h1>Spirits</h1>
-		<p class="subtitle">Browse all spirits</p>
+	<header class="spirits-page__header">
+		<a href="/" class="spirits-page__back-link">← Back to Home</a>
+		<h1 class="spirits-page__title">Spirits</h1>
+		<p class="spirits-page__subtitle">Browse all spirits</p>
 	</header>
 
-	<main class="spirits-content">
-		<ul class="spirits-grid">
-			{#each data.spirits as spirit}
+	<main class="spirits-page__content">
+		<ul class="spirits-page__grid">
+			{#each data.spirits as spiritEntry}
 				<li>
 					<Card
-						title={spirit.name}
-						image={spirit.image}
-						href={"/sprits/" + spirit.slug}
+						title={spiritEntry.name}
+						image={spiritEntry.image}
+						href={"/sprits/" + spiritEntry.slug}
 					/>
 				</li>
 			{/each}
@@ -32,7 +32,7 @@
 </div>
 
 <style>
-	.background-wrap {
+	.spirits-page__background {
 		position: fixed;
 		inset: 0;
 		z-index: 0;
@@ -48,13 +48,13 @@
 		padding: 2rem;
 	}
 
-	.spirits-header {
+	.spirits-page__header {
 		max-width: 1200px;
 		margin: 0 auto 3rem;
 		text-align: center;
 	}
 
-	.back-link {
+	.spirits-page__back-link {
 		display: inline-block;
 		color: var(--primary-accent, #86a0ff);
 		text-decoration: none;
@@ -63,29 +63,29 @@
 		transition: color 0.2s ease;
 	}
 
-	.back-link:hover {
+	.spirits-page__back-link:hover {
 		color: var(--secondary-accent, #4bd6c8);
 	}
 
-	.spirits-header h1 {
+	.spirits-page__title {
 		font-size: clamp(2rem, 5vw, 3.5rem);
 		font-weight: 800;
 		margin-bottom: 0.5rem;
 	}
 
-	.subtitle {
+	.spirits-page__subtitle {
 		font-size: 1.25rem;
 		color: var(--muted-text, #b8c1ff);
 		opacity: 0.9;
 		margin: 0;
 	}
 
-	.spirits-content {
+	.spirits-page__content {
 		max-width: 1200px;
 		margin: 0 auto;
 	}
 
-	.spirits-grid {
+	.spirits-page__grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: 2rem;
@@ -94,12 +94,12 @@
 		padding: 0;
 	}
 
-	.spirits-grid :global(.card) {
+	.spirits-page__grid :global(.card) {
 		background: hsl(0 0% 100% / 0.08);
 		border: 1px solid hsl(0 0% 100% / 0.15);
 	}
 
-	.spirits-grid :global(.card__title) {
+	.spirits-page__grid :global(.card__title) {
 		color: var(--primary-text, #e7ecff);
 	}
 </style>

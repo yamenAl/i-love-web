@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
 	import Header from '$lib/components/organisms/Header.svelte';
+	import '../app.css';
 	import '$lib/assets/styles/styleguide.css';
 	import { theme } from '$lib/stores/theme.js';
 
