@@ -1,0 +1,58 @@
+MOBILE FIRST IN THIS PROJECT
+============================
+
+What "mobile first" means
+-------------------------
+We write CSS for the smallest screen first (phone). Then we add media queries
+for bigger screens (tablet, desktop). So:
+
+  - Default styles = mobile (one column, normal scroll, compact padding).
+  - @media (min-width: 768px) { ... } = tablet and up (e.g. horizontal scroll, nav in a row).
+
+We do NOT start with desktop and then try to shrink it. That way mobile stays
+simple and fast, and we only add layout for bigger screens when we need it.
+
+
+Where we use it in this project
+-------------------------------
+
+1. Header (Header.svelte)
+   - Mobile: nav is hidden, only logo + menu button (hamburger). Tap to open nav.
+   - 768px and up: nav shows in a row, menu button hides. Theme toggle always in header row.
+
+2. Home page (+page.svelte)
+   - Mobile: hero is one column, centered. Horizontal scroll section is just
+     normal vertical scroll (cards stack). Theme toggle is in the header (not floating).
+   - 768px and up: horizontal scroll section uses GSAP to fake horizontal scroll
+     (pin + move). Cards sit side by side.
+
+3. Hero section
+   - Mobile: padding 28vh 1rem, single column.
+   - 768px and up: more padding (25vh, extra-large left/right).
+
+4. Horizontal scroll container
+   - Mobile: overflow visible, cards stack.
+   - 768px and up: overflow hidden, height 100vh, GSAP does the horizontal move.
+
+5. Noscript message
+   - Mobile: full width at bottom.
+   - 768px and up: right side, max-width 20rem.
+
+
+Breakpoint we use
+-----------------
+We use 768px as the breakpoint (min-width). So:
+  - width < 768px  =>  mobile rules
+  - width >= 768px  =>  tablet/desktop rules
+
+You can change that in the @media (min-width: 768px) in +page.svelte and Header.svelte
+if you want a different breakpoint.
+
+
+Why mobile first
+----------------
+- Most users might be on phone first.
+- Default = simple layout, less CSS, faster.
+- We only add complex layout (horizontal scroll, big nav) when the screen is big enough.
+- Easier to read: "base = mobile, then override for desktop" instead of
+  "desktop first then fix mobile".

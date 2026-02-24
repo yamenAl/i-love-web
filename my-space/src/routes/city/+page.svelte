@@ -24,12 +24,14 @@
   // ── DOM refs ─────────────────────────────────────────────────────────────
   let cesiumEl;
   let mapEl;
+  let balloonCanvas;   // separate canvas for the balloon — no shared GL context
 
   // ── Library instances ─────────────────────────────────────────────────────
   let viewer;          // CesiumJS Viewer
   let Cesium;
   let map;             // MapLibre Map
   let markerEls = [];  // MapLibre HTML markers (to remove on destroy)
+  let balloonAnimId;   // RAF id for balloon loop
 
   // ── State ─────────────────────────────────────────────────────────────────
   // phase: 'space' → globe visible  |  'diving' → fly-in in progress
@@ -159,6 +161,7 @@
   }
 
   onDestroy(() => {
+    if (balloonAnimId) cancelAnimationFrame(balloonAnimId);
     markerEls.forEach(m => m.remove());
     if (map) map.remove();
     if (viewer && !viewer.isDestroyed()) viewer.destroy();
@@ -408,130 +411,139 @@
   // gentle bob and slow rotation — rendered every frame via triggerRepaint.
   // ─────────────────────────────────────────────────────────────────────────
   function addBalloon() {
-    const maplibregl = window.maplibregl;
+    // ── Three.js on its own canvas — no shared GL context ─────────────────
+    const w   = mapEl.clientWidth;
+    const h   = mapEl.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
 
-    const LNG = DAM_LNG - 0.001;
-    const LAT  = DAM_LAT + 0.002;
-    const ALT  = 150; // metres above ground
+    const renderer = new THREE.WebGLRenderer({ canvas: balloonCanvas, antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0); // transparent background
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(w, h);
 
-    const origin = maplibregl.MercatorCoordinate.fromLngLat([LNG, LAT], ALT);
-    const mpu    = origin.meterInMercatorCoordinateUnits();
-    const TARGET_METRES = 60;
+    // ── Camera — FOV matches MapLibre's default (36.87°) ─────────────────
+    // We sync position/orientation every frame via map.getFreeCameraOptions()
+    const camera = new THREE.PerspectiveCamera(36.87, w / h, 1, 500000);
 
-    let threeScene, threeCamera, threeRenderer, balloonObj, testBox;
-    let modelScale      = TARGET_METRES * mpu;
-    const startTime     = performance.now();
-    let rotAngle        = 0;
-    let loggedOnce      = false;
+    const scene = new THREE.Scene();
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const sun = new THREE.DirectionalLight(0xffe0a0, 3.0);
+    sun.position.set(5, 10, 5);
+    scene.add(sun);
 
-    const layer = {
-      id:            'balloon-3d',
-      type:          'custom',
-      renderingMode: '3d',
+    // ── Local coordinate system: EUD metres centred at Dam Square ─────────
+    //    E = east, U = up (altitude), S = south
+    //    The balloon sits at (0, BALLOON_ALT, 0) = directly above Dam Square
+    const EARTH_R   = 6371000;
+    const LAT_RAD   = DAM_LAT * Math.PI / 180;
+    const MPD_LNG   = EARTH_R * Math.cos(LAT_RAD) * Math.PI / 180; // m per ° lng
+    const MPD_LAT   = EARTH_R * Math.PI / 180;                      // m per ° lat
+    const BALLOON_ALT = 150; // metres above ground — well above all buildings
 
-      onAdd(mapRef, gl) {
-        console.log('[balloon] onAdd — context:', gl?.constructor?.name);
-        console.log('[balloon] GLB url:', amsterdamSceneUrl);
+    let model      = null;
+    let modelBaseY = BALLOON_ALT; // updated once GLB loads with bounding box centre
+    let mixer      = null;
+    const clock    = new THREE.Clock();
+    const t0       = performance.now();
 
-        threeScene  = new THREE.Scene();
-        threeCamera = new THREE.Camera();
+    // ── Load the 39 MB GLB ────────────────────────────────────────────────
+    new GLTFLoader().load(
+      amsterdamSceneUrl,
+      (gltf) => {
+        model = gltf.scene;
 
-        threeScene.add(new THREE.AmbientLight(0xffffff, 1.5));
-        const sun = new THREE.DirectionalLight(0xffe0a0, 2.5);
-        sun.position.set(1, 2, 1);
-        threeScene.add(sun);
+        // Scale so the tallest dimension = 120 m in world space
+        const box    = new THREE.Box3().setFromObject(model);
+        const size   = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const s      = 120 / maxDim;
 
-        // ── Debug cube ────────────────────────────────────────────────────
-        // A bright red box visible immediately. Confirms the layer renders.
-        // Removed from the scene as soon as the GLB is ready.
-        testBox = new THREE.Mesh(
-          new THREE.BoxGeometry(1, 1, 1),
-          new THREE.MeshBasicMaterial({ color: 0xff2200 }),
-        );
-        threeScene.add(testBox);
+        model.scale.setScalar(s);
 
-        try {
-          threeRenderer = new THREE.WebGLRenderer({
-            canvas:    mapRef.getCanvas(),
-            context:   gl,
-            antialias: true,
-          });
-          threeRenderer.autoClear = false;
-          console.log('[balloon] renderer OK');
-        } catch (e) {
-          console.error('[balloon] renderer FAILED:', e);
-          return;
+        // Centre the bounding box on the world origin, then raise to BALLOON_ALT
+        modelBaseY = -center.y * s + BALLOON_ALT;
+        model.position.set(-center.x * s, modelBaseY, -center.z * s);
+
+        // Never let Three.js cull it — always render regardless of frustum
+        model.traverse(o => { o.frustumCulled = false; });
+
+        scene.add(model);
+
+        // Play embedded animations if the balloon has any (ropes, fire, etc.)
+        if (gltf.animations?.length) {
+          mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach(a => mixer.clipAction(a).play());
         }
 
-        new GLTFLoader().load(
-          amsterdamSceneUrl,
-          (gltf) => {
-            balloonObj = gltf.scene;
-
-            const box    = new THREE.Box3().setFromObject(balloonObj);
-            const size   = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            if (maxDim > 0) modelScale = (TARGET_METRES / maxDim) * mpu;
-
-            const centre = box.getCenter(new THREE.Vector3());
-            balloonObj.position.sub(centre);
-
-            threeScene.remove(testBox); // replace debug cube with real balloon
-            threeScene.add(balloonObj);
-            console.log('[balloon] GLB ready — size:', size, '| scale:', modelScale);
-          },
-          undefined,
-          (err) => console.error('[balloon] GLB load FAILED:', err),
-        );
+        console.log('[balloon] GLB loaded — size:', size, '| scale:', s, '| baseY:', modelBaseY);
       },
-
-      render(gl, args) {
-        // Don't render until the WebGLRenderer is ready
-        if (!threeRenderer) return;
-
-        if (!loggedOnce) {
-          loggedOnce = true;
-          const keys = Object.keys(args || {});
-          console.log('[balloon] first render — args keys:', keys);
-          console.log('[balloon] mainMatrix present:', !!args?.defaultProjectionData?.mainMatrix);
-        }
-
-        // Support multiple MapLibre v4 matrix locations
-        const rawMatrix =
-          args?.defaultProjectionData?.mainMatrix ??
-          args?.projectionMatrix ??
-          args?.modelViewProjectionMatrix;
-
-        if (!rawMatrix) {
-          console.warn('[balloon] no projection matrix in render args:', args);
-          return;
-        }
-
-        const t    = (performance.now() - startTime) / 1000;
-        rotAngle  += 0.003;
-        const bobZ = Math.sin(t * 0.4) * 10 * mpu;
-
-        // GLTF is Y-up; Mercator is Z-up → rotate 90° around X to stand upright
-        const rotX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-        const rotY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotAngle);
-
-        const l = new THREE.Matrix4()
-          .makeTranslation(origin.x, origin.y, origin.z + bobZ)
-          .scale(new THREE.Vector3(modelScale, -modelScale, modelScale))
-          .multiply(rotX)
-          .multiply(rotY);
-
-        const m = new THREE.Matrix4().fromArray(rawMatrix);
-        threeCamera.projectionMatrix = m.multiply(l);
-
-        threeRenderer.resetState();
-        threeRenderer.render(threeScene, threeCamera);
-        map.triggerRepaint();
+      (xhr) => {
+        if (xhr.total) console.log('[balloon] loading:', Math.round(xhr.loaded / xhr.total * 100) + '%');
       },
-    };
+      (err) => console.error('[balloon] GLB FAILED:', err),
+    );
 
-    map.addLayer(layer);
-    console.log('[balloon] layer added');
+    // ── RAF loop: sync camera with MapLibre then render ───────────────────
+    let rotY = 0;
+
+    function frame() {
+      balloonAnimId = requestAnimationFrame(frame);
+
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+
+      // Derive camera state directly from MapLibre's public API so zoom/pan/pitch
+      // are always reflected in the Three.js scene (scales balloon correctly)
+      const zoom    = map.getZoom();
+      const pitchR  = map.getPitch()   * Math.PI / 180;
+      const bearR   = map.getBearing() * Math.PI / 180;
+      const center  = map.getCenter();
+      const latR    = center.lat * Math.PI / 180;
+
+      // Metres per pixel at this zoom + latitude (MapLibre 512-px tile grid)
+      const mpp = (2 * Math.PI * 6371008 * Math.cos(latR)) / (512 * Math.pow(2, zoom));
+
+      // Camera-to-centre distance in pixels (MapLibre vertical FOV = 36.87°)
+      const ctcPx = (mapEl.clientHeight * 0.5) / Math.tan(36.87 * Math.PI / 360);
+
+      // Altitude and horizontal offset from map centre, in metres
+      const alt  = ctcPx * Math.cos(pitchR) * mpp;
+      const hOff = ctcPx * Math.sin(pitchR) * mpp;
+
+      // Map centre in EUD world space
+      const ctrE = (center.lng - DAM_LNG) * MPD_LNG;
+      const ctrS = (DAM_LAT - center.lat) * MPD_LAT;
+
+      // Camera sits behind centre (opposite the look direction)
+      camera.position.set(
+        ctrE - hOff * Math.sin(bearR),
+        alt,
+        ctrS + hOff * Math.cos(bearR),
+      );
+      // Always look toward map centre at ground level
+      camera.lookAt(ctrE, 0, ctrS);
+
+      // Animate: slow Y-rotation + gentle vertical bob
+      if (model) {
+        const t = (performance.now() - t0) / 1000;
+        rotY += 0.003;
+        model.rotation.y   = rotY;
+        model.position.y   = modelBaseY + Math.sin(t * 0.4) * 10; // ±10 m bob
+      }
+
+      renderer.clear();
+      renderer.render(scene, camera);
+    }
+
+    frame();
+
+    // Keep canvas in sync when the window resizes
+    window.addEventListener('resize', () => {
+      renderer.setSize(mapEl.clientWidth, mapEl.clientHeight);
+      camera.aspect = mapEl.clientWidth / mapEl.clientHeight;
+      camera.updateProjectionMatrix();
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -619,6 +631,13 @@
 
   <!-- ── Phase 2: MapLibre map (revealed after crossfade) ─────────────────── -->
   <div class="map-wrap" bind:this={mapEl}></div>
+
+  <!-- Balloon overlay — own GL context, always on top of the map -->
+  <canvas
+    class="balloon-canvas"
+    class:visible={phase === 'map'}
+    bind:this={balloonCanvas}
+  ></canvas>
 
   <!-- Edge vignette -->
   <div class="vignette" aria-hidden="true"></div>
@@ -752,6 +771,19 @@
     inset: 0;
     z-index: 1;
   }
+
+  /* ── Balloon overlay canvas ──────────────────────────────────────────────
+     Sits above the map (z:1) and vignette (z:3) but below the UI (z:10).
+     Transparent background so the map shows through underneath.            */
+  .balloon-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  .balloon-canvas.visible { opacity: 1; }
 
   :global(.maplibregl-ctrl-logo),
   :global(.maplibregl-ctrl-attrib) { display: none !important; }
