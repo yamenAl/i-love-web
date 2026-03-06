@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store';
 
 const STORAGE_KEY = 'theme';
-const DEFAULT = 'light';
+const DEFAULT = 'dark';
 
 // read saved theme from localStorage (or default) – only in browser
 function getInitial() {
