@@ -3,61 +3,208 @@
 	import { theme } from '$lib/stores/theme.js';
 	import SplineSceneDark from '$lib/components/SplineSceneDark.svelte';
 	import SplineSceneLight from '$lib/components/SplineSceneLight.svelte';
+	import CustomCursor from '$lib/components/home/CustomCursor.svelte';
+	import HeroSection from '$lib/components/home/HeroSection.svelte';
+	import AboutProjectsContact from '$lib/components/home/AboutProjectsContact.svelte';
+	import StatsBar from '$lib/components/home/StatsBar.svelte';
+	import StoryScroll from '$lib/components/home/StoryScroll.svelte';
 
-	// gsap loads from cdn so we wait max 8s then give up
 	const GSAP_TIMEOUT_MS = 8000;
-
 	const heroName = 'Yamen Al Sharabi';
-	const heroSubtitle = 'front-end dev & learning in public';
+	const stats = [
+		{ target: 2, suffix: '+', label: 'Years building' },
+		{ target: 10, suffix: '+', label: 'Projects shipped' },
+		{ target: 3, suffix: '', label: 'Stacks mastered' }
+	];
 
-	let horizontalScrollContainer;
-	let gsapReady = $state(false);
+	// Page-level UI states: JS-ready flag, intro overlay, motion mode, progress values.
 	let hasJs = $state(false);
+	let showIntroLoader = $state(true);
+	let gsapReady = $state(false);
+	let scrollPercent = $state(0);
+	let animatedStats = $state([0, 0, 0]);
+	let horizontalScrollContainer = $state(null);
+	let statBar = $state(null);
 
-	// set hasJs and load gsap from cdn, then init horizontal scroll
+	function updateScrollProgress() {
+		// Keep top progress line in sync with total scroll depth.
+		const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+		if (scrollable <= 0) {
+			scrollPercent = 0;
+			return;
+		}
+		scrollPercent = Math.max(0, Math.min(100, (window.scrollY / scrollable) * 100));
+	}
+
+	function animateStat(index, target) {
+		// Small cubic easing for smooth counter animation.
+		const duration = 900;
+		const startedAt = performance.now();
+
+		function tick(now) {
+			const progress = Math.min(1, (now - startedAt) / duration);
+			animatedStats[index] = Math.floor(target * (1 - Math.pow(1 - progress, 3)));
+			if (progress < 1) requestAnimationFrame(tick);
+		}
+
+		requestAnimationFrame(tick);
+	}
+
+	function loadScript(src) {
+		// Reuse existing script tags so we do not inject duplicates.
+		return new Promise((resolve, reject) => {
+			const existing = document.querySelector(`script[src="${src}"]`);
+			if (existing) {
+				if (existing.dataset.loaded === 'true') {
+					resolve();
+					return;
+				}
+				existing.addEventListener('load', () => resolve(), { once: true });
+				existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+				return;
+			}
+
+			const script = document.createElement('script');
+			script.src = src;
+			script.async = true;
+			script.onload = () => {
+				script.dataset.loaded = 'true';
+				resolve();
+			};
+			script.onerror = () => reject(new Error(`Failed to load ${src}`));
+			document.head.appendChild(script);
+		});
+	}
+
+	function initHorizontalScroll() {
+		// Progressive enhancement: only activate horizontal pin on desktop + GSAP ready.
+		if (!window.gsap || !window.ScrollTrigger || !horizontalScrollContainer) return () => {};
+
+		const desktopQuery = window.matchMedia('(min-width: 768px)');
+		if (!desktopQuery.matches) return () => {};
+
+		const { gsap, ScrollTrigger } = window;
+		const track = horizontalScrollContainer.querySelector('.story-scroll-track');
+		if (!track) return () => {};
+
+		const getDistance = () => Math.max(0, track.scrollWidth - window.innerWidth);
+		if (getDistance() <= 1) return () => {};
+
+		const tween = gsap.to(track, {
+			x: () => -getDistance(),
+			ease: 'none'
+		});
+
+		const pin = ScrollTrigger.create({
+			trigger: horizontalScrollContainer,
+			start: 'top top',
+			end: () => `+=${getDistance()}`,
+			pin: true,
+			scrub: 1,
+			animation: tween,
+			invalidateOnRefresh: true
+		});
+
+		const cardTriggers = [];
+		track.querySelectorAll('.story-card').forEach((card) => {
+			const lines = card.querySelectorAll('.story-line');
+			if (!lines.length) return;
+			const trigger = gsap.fromTo(
+				lines,
+				{ xPercent: 36, opacity: 0 },
+				{
+					xPercent: 0,
+					opacity: 1,
+					ease: 'power2.out',
+					stagger: 0.1,
+					scrollTrigger: {
+						trigger: card,
+						containerAnimation: tween,
+						start: 'left center',
+						end: 'center center',
+						scrub: true
+					}
+				}
+			);
+			cardTriggers.push(trigger);
+		});
+
+		const onResize = () => ScrollTrigger.refresh();
+		window.addEventListener('resize', onResize);
+		ScrollTrigger.refresh();
+
+		return () => {
+			window.removeEventListener('resize', onResize);
+			pin.kill();
+			tween.kill();
+			cardTriggers.forEach((animation) => {
+				if (animation?.scrollTrigger) animation.scrollTrigger.kill();
+				animation?.kill?.();
+			});
+		};
+	}
+
 	onMount(() => {
+		// Main boot sequence: loader, progress, counter observer, then GSAP setup.
 		hasJs = true;
-		let timedOut = false;
-		const timeout = setTimeout(() => { timedOut = true; }, GSAP_TIMEOUT_MS);
-		const gsapScriptElement = document.createElement('script');
-		gsapScriptElement.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js';
-		gsapScriptElement.onerror = () => { clearTimeout(timeout); };
-		gsapScriptElement.onload = () => {
-			const scrollTriggerScriptElement = document.createElement('script');
-			scrollTriggerScriptElement.src = 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js';
-			scrollTriggerScriptElement.onerror = () => { clearTimeout(timeout); };
-			scrollTriggerScriptElement.onload = () => {
-				if (timedOut || !window.gsap || !window.ScrollTrigger) { clearTimeout(timeout); return; }
+		const cleanups = [];
+
+		const loaderTimer = setTimeout(() => {
+			showIntroLoader = false;
+		}, 1150);
+		cleanups.push(() => clearTimeout(loaderTimer));
+
+		updateScrollProgress();
+		window.addEventListener('scroll', updateScrollProgress, { passive: true });
+		window.addEventListener('resize', updateScrollProgress);
+		cleanups.push(() => {
+			window.removeEventListener('scroll', updateScrollProgress);
+			window.removeEventListener('resize', updateScrollProgress);
+		});
+
+		if (statBar && 'IntersectionObserver' in window) {
+			const statsObserver = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((entry) => {
+						if (!entry.isIntersecting) return;
+						stats.forEach((item, index) => animateStat(index, item.target));
+						statsObserver.disconnect();
+					});
+				},
+				{ threshold: 0.35 }
+			);
+			statsObserver.observe(statBar);
+			cleanups.push(() => statsObserver.disconnect());
+		}
+
+		(async () => {
+			let timedOut = false;
+			const timeout = setTimeout(() => {
+				timedOut = true;
+			}, GSAP_TIMEOUT_MS);
+
+			try {
+				await loadScript('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js');
+				await loadScript('https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js');
+				if (timedOut || !window.gsap || !window.ScrollTrigger) return;
+
 				clearTimeout(timeout);
 				window.gsap.registerPlugin(window.ScrollTrigger);
-				requestAnimationFrame(() => setTimeout(() => { gsapReady = initHorizontalScroll() === true; }, 100));
-			};
-			document.head.appendChild(scrollTriggerScriptElement);
+				const cleanupHorizontal = initHorizontalScroll();
+				if (cleanupHorizontal) {
+					gsapReady = true;
+					cleanups.push(cleanupHorizontal);
+				}
+			} catch (_) {
+				clearTimeout(timeout);
+			}
+		})();
+
+		return () => {
+			cleanups.forEach((cleanup) => cleanup?.());
 		};
-		document.head.appendChild(gsapScriptElement);
 	});
-
-	// pin the scroll area and move it horizontally; animate each card's lines on the way
-	function initHorizontalScroll() {
-		if (!window.gsap || !window.ScrollTrigger) return false;
-		const { gsap, ScrollTrigger } = window;
-		const horizontalScrollTrack = document.querySelector('.horizontal-scroll-section');
-		if (!horizontalScrollTrack || !horizontalScrollContainer) return false;
-		const scrollDistance = () => Math.max(0, horizontalScrollTrack.scrollWidth - window.innerWidth);
-		if (scrollDistance() <= 1) return false;
-		const horizontalScroller = gsap.to(horizontalScrollTrack, { x: () => -scrollDistance(), ease: 'none' });
-		ScrollTrigger.create({ trigger: horizontalScrollContainer, start: 'top top', end: () => `+=${scrollDistance()}`, pin: true, animation: horizontalScroller, scrub: 1, invalidateOnRefresh: true });
-		gsap.utils.toArray('.scroll-card-wrapper').forEach((scrollCard) => {
-			const cardLines = scrollCard.querySelectorAll('.scroll-card__line');
-			if (!cardLines.length) return;
-			gsap.fromTo(cardLines, { xPercent: 40, opacity: 0 }, { xPercent: 0, opacity: 1, ease: 'power2.out', stagger: 0.12, scrollTrigger: { trigger: scrollCard, containerAnimation: horizontalScroller, start: 'left center', end: 'center center', scrub: true } });
-		});
-		ScrollTrigger.refresh();
-		window.addEventListener('resize', () => ScrollTrigger.refresh());
-		return true;
-	}
 </script>
-
 
 {#if hasJs}
 	<div class="spline-container" aria-hidden="false">
@@ -69,261 +216,160 @@
 	</div>
 {/if}
 
+{#if hasJs}
+	<CustomCursor />
+{/if}
+
+{#if showIntroLoader}
+	<div class="intro-loader" aria-live="polite">
+		<div class="intro-loader__inner">
+			<p class="intro-loader__label">Yamen.dev</p>
+			<div class="intro-loader__line"><span></span></div>
+		</div>
+	</div>
+{/if}
+
+<div class="scroll-progress">
+	<span style="width: {scrollPercent}%;"></span>
+</div>
+
 <noscript>
-	<p class="noscript-message">Some features (3D scene, scroll animation) need JavaScript. Content below works without it.</p>
+	<p class="noscript-message">Some features (3D scene and motion effects) need JavaScript. The content still works.</p>
 </noscript>
 
-<main class="main">
-	<section class="hero">
-		<h1 class="hero__title hero__letters hero__title--animated" aria-label={heroName}>
-			{#each heroName.split('') as letter, letterIndex}
-				<span class="hero__letter" style="--hero-letter-index: {letterIndex}">{letter === ' ' ? '\u00A0' : letter}</span>
-			{/each}
-		</h1>
-		<h2 class="hero__subtitle hero__letters hero__subtitle--animated" aria-label={heroSubtitle}>
-			{#each heroSubtitle.split('') as letter, letterIndex}
-				<span class="hero__letter" style="--hero-letter-index: {letterIndex}">{letter === ' ' ? '\u00A0' : letter}</span>
-			{/each}
-		</h2>
-	</section>
+<main class="page">
+	<div class="grid-bg"></div>
+	<div class="orb orb-1"></div>
+	<div class="orb orb-2"></div>
+	<HeroSection {heroName} themeMode={$theme} />
 
-	<div bind:this={horizontalScrollContainer} class="horizontal-scroll-container" class:horizontal-scroll-container--fallback={!gsapReady}>
-		<section class="horizontal-scroll-section">
-			<div class="scroll-card-wrapper">
-				<article class="scroll-card glass-card">
-					<h3 class="scroll-card__line">Why the web?</h3>
-					<p class="scroll-card__line">Because the browser is for everyone. That's why I build here.</p>
-					<p class="scroll-card__line">I care about fast loads, clear content, and tiny details that feel good.</p>
-				</article>
-			</div>
-			<div class="scroll-card-wrapper">
-				<article class="scroll-card glass-card">
-					<h3 class="scroll-card__line">Hi, I'm Yamen</h3>
-					<p class="scroll-card__line">Web developer in progress</p>
-					<p class="scroll-card__line">I care about friendly UX, fast loads, and code you won't hate later.</p>
-				</article>
-			</div>
-			<div class="scroll-card-wrapper">
-				<article class="scroll-card glass-card">
-					<h3 class="scroll-card__line">What I can make for you</h3>
-					<p class="scroll-card__line">Landing pages, small web apps, dashboards, and reusable components.</p>
-					<p class="scroll-card__line">From idea to deploy: design, build, host, and a clean handover.</p>
-				</article>
-			</div>
-			<div class="scroll-card-wrapper">
-				<article class="scroll-card glass-card">
-					<h3 class="scroll-card__line">How I work</h3>
-					<p class="scroll-card__line">Sketch → prototype → code → feedback.</p>
-					<p class="scroll-card__line">I'm still in a course, so I bring fresh patterns, curiosity, and momentum.</p>
-				</article>
-			</div>
-			<div class="scroll-card-wrapper">
-				<article class="scroll-card glass-card">
-					<h3 class="scroll-card__line">Principles I work by</h3>
-					<p class="scroll-card__line">Content first. Accessibility by default. Real-user metrics over guesses.</p>
-					<p class="scroll-card__line">Simple stacks: HTML, CSS, JavaScript — plus modern tooling when it helps.</p>
-				</article>
-			</div>
-			<div class="scroll-card-wrapper">
-				<article class="scroll-card glass-card">
-					<h3 class="scroll-card__line">See my work</h3>
-					<p class="scroll-card__line">Projects, experiments, and code samples — all in one place.</p>
-					<a class="scroll-card__line cta-link" href="/year/2025-2026">Explore the portfolio →</a>
-					<a class="scroll-card__line cta-link" href="/sprits">Spirits →</a>
-				</article>
-			</div>
-		</section>
+	<div bind:this={statBar}>
+		<StatsBar {stats} {animatedStats} />
 	</div>
+
+	<div bind:this={horizontalScrollContainer}>
+		<StoryScroll {gsapReady} />
+	</div>
+
+	<AboutProjectsContact themeMode={$theme} />
 </main>
 
-<footer class="site-footer section-padding text-muted">
-	<p>© {new Date().getFullYear()} Yamen Al Sharabi. All rights reserved.</p>
-</footer>
-
 <style>
-	/* mobile first: default is small screen, then we override at 768px (tablet) */
-	@keyframes nameReveal {
-		from { transform: translateX(1em); opacity: 0; }
-		to { transform: translateX(0); opacity: 1; }
+	@keyframes loaderSlide {
+		from {
+			transform: translateX(-100%);
+		}
+		to {
+			transform: translateX(100%);
+		}
 	}
 
-	/* spline wrapper: no position/transform so the canvas stays centered in viewport */
-	.spline-container {
-		position: static;
-		z-index: var(--z-index-background);
-		pointer-events: none;
+	.intro-loader {
+		position: fixed;
+		inset: 0;
+		z-index: 1200;
+		display: grid;
+		place-items: center;
+		background: rgb(8 10 15 / 0.88);
+		backdrop-filter: blur(10px);
+	}
+	.intro-loader__inner {
+		width: min(420px, 84vw);
+	}
+	.intro-loader__label {
+		margin: 0 0 10px;
+		font-family: var(--font-family-mono);
+		font-size: 0.78rem;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: #f0f2f8;
+	}
+	.intro-loader__line {
+		height: 2px;
+		width: 100%;
+		background: rgb(255 255 255 / 0.12);
+		overflow: hidden;
+	}
+	.intro-loader__line span {
+		display: block;
+		width: 55%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, #ff4d6d, #4df0c8, transparent);
+		animation: loaderSlide 1s ease infinite;
 	}
 
-	/* when js is off we show this at bottom */
+	.scroll-progress {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 2px;
+		z-index: 110;
+		background: transparent;
+	}
+	.scroll-progress span {
+		display: block;
+		height: 100%;
+		background: linear-gradient(90deg, #ff4d6d, #4df0c8);
+		transition: width 0.08s linear;
+	}
+
 	.noscript-message {
 		position: fixed;
-		bottom: var(--spacing-medium);
-		left: var(--spacing-medium);
-		right: var(--spacing-medium);
-		z-index: 100;
-		padding: var(--spacing-small) var(--spacing-medium);
-		background: hsl(0 0% 0% / 0.8);
-		color: var(--text-color-white-primary);
-		font-size: var(--font-size-small-text);
+		bottom: 1rem;
+		left: 1rem;
+		right: 1rem;
+		z-index: 200;
+		padding: 0.7rem 1rem;
+		background: rgb(0 0 0 / 0.78);
+		color: #fff;
+		font-size: 0.9rem;
+		border-radius: 8px;
 		text-align: center;
-		border-radius: var(--border-radius-small);
-		font-family: var(--font-family-primary);
 	}
 
-	.main {
+	.page {
 		position: relative;
-		z-index: var(--z-index-content);
+		z-index: 1;
+		container-type: inline-size;
+	}
+
+	.grid-bg,
+	.orb {
+		position: fixed;
 		pointer-events: none;
+		z-index: 0;
 	}
-	.main * {
-		pointer-events: auto;
+	.grid-bg {
+		inset: 0;
+		background-image: linear-gradient(rgb(255 77 109 / 0.03) 1px, transparent 1px), linear-gradient(90deg, rgb(255 77 109 / 0.03) 1px, transparent 1px);
+		background-size: 60px 60px;
 	}
-
-	/* hero: name + subtitle, centered, letters animate in with nameReveal */
-	.hero {
-		position: relative;
-		z-index: var(--z-index-content);
-		min-height: 100vh;
-		min-height: 100dvh;
-		padding: 28vh 1rem var(--spacing-large);
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		text-align: center;
-		gap: var(--spacing-small);
+	.orb {
+		border-radius: 50%;
+		filter: blur(120px);
 	}
-	.hero__title {
-		font-size: var(--font-size-hero-main-title);
-		font-weight: var(--font-weight-bold);
-		line-height: 1.15;
-		letter-spacing: 0.02em;
-		color: var(--text-color-white-primary);
-		margin: 0;
+	.orb-1 {
+		width: 500px;
+		height: 500px;
+		top: -150px;
+		right: -100px;
+		background: rgb(255 77 109 / 0.1);
 	}
-	.hero__subtitle {
-		font-size: var(--font-size-hero-subtitle);
-		font-weight: var(--font-weight-semibold);
-		letter-spacing: 0.01em;
-		color: var(--text-color-white-primary);
-		opacity: 0.9;
-		margin: 0;
+	.orb-2 {
+		width: 400px;
+		height: 400px;
+		bottom: -100px;
+		left: -80px;
+		background: rgb(77 240 200 / 0.08);
 	}
 
-	.hero__letters .hero__letter {
-		display: inline-block;
-		opacity: 0;
-		animation: nameReveal 0.5s ease-out forwards;
-	}
-	.hero__title--animated .hero__letter {
-		animation-delay: calc(50ms + var(--hero-letter-index, 0) * 35ms);
-	}
-	.hero__subtitle--animated .hero__letter {
-		animation-delay: calc(250ms + var(--hero-letter-index, 0) * 35ms);
-	}
-	@supports not (animation-duration: 1s) {
-		.hero__letters .hero__letter { opacity: 1; animation: none; }
-	}
 	@media (prefers-reduced-motion: reduce) {
-		.hero__letters .hero__letter { opacity: 1; animation: none; }
-	}
-
-	/* horizontal scroll: on mobile it's just normal scroll; desktop we use gsap to fake horizontal */
-	.horizontal-scroll-container {
-		position: relative;
-		z-index: var(--z-index-content);
-		overflow: visible;
-	}
-	.horizontal-scroll-container--fallback {
-		overflow-x: auto;
-		overflow-y: hidden;
-		-webkit-overflow-scrolling: touch;
-	}
-	.horizontal-scroll-container--fallback .horizontal-scroll-section {
-		display: flex;
-		flex-direction: row;
-		flex-wrap: nowrap;
-	}
-
-	.horizontal-scroll-section {
-		position: relative;
-		z-index: var(--z-index-content);
-		display: block;
-	}
-
-	.scroll-card-wrapper {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		position: relative;
-		z-index: var(--z-index-content);
-		min-height: 80svh;
-		min-height: 80dvh;
-		padding: var(--spacing-medium) 0;
-	}
-
-	.scroll-card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-small);
-		width: 100%;
-		max-width: 92vw;
-		margin: 0 auto;
-		position: relative;
-		z-index: var(--z-index-content);
-	}
-	.scroll-card .cta-link {
-		align-self: flex-start;
-		margin-top: var(--spacing-extra-small);
-		min-height: 44px;
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.site-footer {
-		position: relative;
-		z-index: var(--z-index-content);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--spacing-large) 0;
-	}
-	.site-footer p {
-		margin: 0;
-	}
-
-	/* from 768px up: real horizontal scroll (gsap pins and moves), cards side by side */
-	@media (min-width: 768px) {
-		.noscript-message {
-			left: auto;
-			right: var(--spacing-medium);
-			max-width: 20rem;
+		.intro-loader {
+			display: none;
 		}
-		.hero {
-			padding-top: 25vh;
-			padding-left: var(--spacing-extra-large);
-			padding-right: var(--spacing-extra-large);
-		}
-		.horizontal-scroll-container {
-			overflow: hidden;
-			height: 100svh;
-			height: 100dvh;
-		}
-		.horizontal-scroll-section {
-			display: flex;
-			flex-direction: row;
-			height: 100svh;
-			height: 100dvh;
-			min-width: max-content;
-			will-change: transform;
-		}
-		.scroll-card-wrapper {
-			flex: 0 0 100vw;
-			height: 100svh;
-			height: 100dvh;
-			padding: 0;
-		}
-		.scroll-card {
-			max-width: min(92vw, 800px);
+		.scroll-progress span {
+			transition: none;
 		}
 	}
 </style>
