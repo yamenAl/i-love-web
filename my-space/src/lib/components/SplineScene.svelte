@@ -143,7 +143,7 @@
 		filter: brightness(0.95) contrast(1.02);
 	}
 	.spline-container__canvas--loaded.theme-light {
-		opacity: 0.88;
-		filter: brightness(1.12) contrast(1.08) saturate(1.1);
+		opacity: 0.9;
+		filter: brightness(1.03) contrast(1.14) saturate(1.2);
 	}
 </style>
