@@ -40,9 +40,9 @@
 			<span>{siteName.split('—')[1]?.trim() ?? 'I love web'}</span>
 		</a>
 
-		<div class="status-tag" aria-label="Always looking for new ideas">
+		<div class="status-tag" aria-label="Got an idea? I'll build it.">
 			<span class="status-dot"></span>
-			ALWAYS LOOKING FOR NEW IDEAS
+			Got an idea? I'll build it.
 		</div>
 
 		<nav class="header-nav" class:header-nav--open={mobileMenuOpen}>
