@@ -1,31 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
 
 :root {
-  --background-color-dark-navy: hsl(226, 48%, 6%);
-  --background-color-dark-navy-light: hsl(226, 49%, 10%);
-  --background-color-pure-black: hsl(0, 0%, 0%);
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --dur: 0.4s;
 
-  --text-color-white-primary: hsl(229, 100%, 95%);
-  --text-color-white-muted: hsl(230, 100%, 86%);
-
-  --accent-color-blue-primary: hsl(230, 100%, 76%);
-  --accent-color-teal-secondary: hsl(170, 70%, 58%);
-
-  --glass-background-transparent: hsl(0, 0%, 100%, 0.08);
-  --glass-border-transparent: hsl(0, 0%, 100%, 0.15);
-  --glass-blur-amount: 20px;
-
-  --font-size-hero-main-title: clamp(34px, 9vw, 120px);
-  --font-size-hero-subtitle: clamp(16px, 4vw, 34px);
+  --font-size-hero-main-title: clamp(3.2rem, 12vw, 10rem);
+  --font-size-hero-subtitle: clamp(0.85rem, 2vw, 1rem);
   --font-size-card-heading: clamp(22px, 6vw, 42px);
   --font-size-card-body-text: clamp(14px, 3.6vw, 18px);
   --font-size-small-text: clamp(0.875rem, 2vw, 1rem);
 
-  --font-family-primary: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+  --font-family-primary: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+  --font-family-mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-family-display: 'Bebas Neue', var(--font-family-primary);
 
   --font-weight-normal: 400;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 800;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 700;
 
   --spacing-extra-small: 0.3rem;
   --spacing-small: 0.6rem;
@@ -38,16 +29,80 @@
   --border-radius-large: 16px;
   --border-radius-extra-large: 24px;
 
-  --shadow-card-elevated: 0 24px 60px hsl(0, 0%, 0%, 0.5);
-  --shadow-subtle-elevated: 0 8px 32px hsl(0, 0%, 0%, 0.3);
-
-  --transition-speed-fast: 0.2s ease;
-  --transition-speed-normal: 0.3s ease;
+  --glass-blur-amount: 20px;
+  --transition-speed-fast: 0.2s var(--ease);
+  --transition-speed-normal: 0.3s var(--ease);
   --transition-speed-slow: 0.8s ease-in;
 
   --z-index-background: 0;
   --z-index-content: 10;
   --z-index-loader: 1000;
+}
+
+html[data-theme='dark'] {
+  --bg: #0a0a0a;
+  --header-bg: #0a0a0a;
+  --logo: #f0f0f0;
+  --logo-dash: #e8441a;
+  --nav-link: rgb(240 240 240 / 0.55);
+  --nav-hover: #f0f0f0;
+  --nav-active-dot: #e8441a;
+  --tag-bg: rgb(232 68 26 / 0.12);
+  --tag-border: rgb(232 68 26 / 0.35);
+  --tag-text: #e8441a;
+  --divider: rgb(255 255 255 / 0.07);
+  --toggle-bg: rgb(255 255 255 / 0.06);
+  --toggle-border: rgb(255 255 255 / 0.12);
+  --toggle-label: rgb(240 240 240 / 0.6);
+  --toggle-track: #22c55e;
+  --ticker-bg: #e8441a;
+  --ticker-text: #fff;
+  --page-bg: #0a0a0a;
+  --demo-text: rgb(255 255 255 / 0.06);
+
+  --text-color-white-primary: var(--logo);
+  --text-color-white-muted: var(--nav-link);
+  --accent-color-blue-primary: var(--logo-dash);
+  --accent-color-blue-soft: rgb(232 68 26 / 0.4);
+  --accent-color-teal-secondary: #22c55e;
+  --accent-color-teal-soft: rgb(34 197 94 / 0.55);
+  --glass-background-transparent: rgb(255 255 255 / 0.04);
+  --glass-border-transparent: rgb(255 255 255 / 0.09);
+  --shadow-card-elevated: 0 24px 60px rgb(0 0 0 / 0.48);
+  --shadow-subtle-elevated: 0 8px 32px rgb(0 0 0 / 0.28);
+}
+
+html[data-theme='light'] {
+  --bg: #f5f2ee;
+  --header-bg: #f5f2ee;
+  --logo: #111;
+  --logo-dash: #c0392b;
+  --nav-link: rgb(20 20 20 / 0.45);
+  --nav-hover: #111;
+  --nav-active-dot: #c0392b;
+  --tag-bg: rgb(192 57 43 / 0.08);
+  --tag-border: rgb(192 57 43 / 0.25);
+  --tag-text: #c0392b;
+  --divider: rgb(0 0 0 / 0.08);
+  --toggle-bg: rgb(0 0 0 / 0.05);
+  --toggle-border: rgb(0 0 0 / 0.1);
+  --toggle-label: rgb(20 20 20 / 0.55);
+  --toggle-track: #22c55e;
+  --ticker-bg: #111;
+  --ticker-text: #f5f2ee;
+  --page-bg: #f5f2ee;
+  --demo-text: rgb(0 0 0 / 0.05);
+
+  --text-color-white-primary: var(--logo);
+  --text-color-white-muted: var(--nav-link);
+  --accent-color-blue-primary: var(--logo-dash);
+  --accent-color-blue-soft: rgb(192 57 43 / 0.4);
+  --accent-color-teal-secondary: #16a34a;
+  --accent-color-teal-soft: rgb(22 163 74 / 0.55);
+  --glass-background-transparent: rgb(255 255 255 / 0.5);
+  --glass-border-transparent: rgb(0 0 0 / 0.1);
+  --shadow-card-elevated: 0 24px 60px rgb(0 0 0 / 0.16);
+  --shadow-subtle-elevated: 0 8px 32px rgb(0 0 0 / 0.1);
 }
 
 *,
@@ -58,7 +113,8 @@
 
 html {
   height: 100%;
-  background: var(--background-color-pure-black);
+  background: var(--page-bg);
+  transition: background var(--dur) var(--ease);
 }
 
 body {
@@ -70,21 +126,25 @@ body {
   background: transparent;
   line-height: 1.55;
   overflow-x: hidden;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
 h1 {
-  font-weight: var(--font-weight-bold);
-  text-transform: uppercase;
+  font-family: var(--font-family-display);
+  font-weight: 400;
   font-size: var(--font-size-hero-main-title);
-  line-height: 1.05;
-  letter-spacing: 0.5px;
+  line-height: 0.9;
+  letter-spacing: 0.04em;
   margin: 0;
 }
 
 h2 {
-  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-mono);
+  font-weight: 400;
   font-size: var(--font-size-hero-subtitle);
-  opacity: 0.95;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+  opacity: 1;
   margin: 0;
 }
 
@@ -143,7 +203,7 @@ a {
   color: var(--accent-color-blue-primary);
   text-decoration: none;
   font-weight: var(--font-weight-bold);
-  border-bottom: 2px solid hsl(230, 100%, 75%, 0.4);
+  border-bottom: 2px solid var(--accent-color-blue-soft);
   padding-bottom: 2px;
   transition: color var(--transition-speed-fast), 
               transform var(--transition-speed-fast), 
@@ -153,7 +213,7 @@ a {
 .cta-link:hover {
   color: var(--accent-color-teal-secondary);
   transform: translateX(2px);
-  border-color: hsl(170, 70%, 60%, 0.55);
+  border-color: var(--accent-color-teal-soft);
 }
 
 .section-padding {
@@ -193,9 +253,9 @@ a {
 
 @supports not (--css: variables) {
   body {
-    font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
-    color: #e7ecff;
-    background: #000;
+    font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+    color: #f0f0f0;
+    background: #0a0a0a;
   }
   
   .glass-card {
@@ -206,12 +266,12 @@ a {
   }
   
   .cta-link {
-    color: #86a0ff;
+    color: #e8441a;
     font-weight: 700;
   }
   
   .cta-link:hover {
-    color: #4bd6c8;
+    color: #22c55e;
   }
 }
 
