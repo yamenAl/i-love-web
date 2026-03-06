@@ -17,7 +17,7 @@
   import { onMount, onDestroy } from 'svelte';
   import * as THREE from 'three';
   import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-  import amsterdamSceneUrl from '$lib/assets/3d/amsterdam_scene.glb?url';
+  import amsterdamSceneUrl from '$lib/assets/3d/floating-balloon.glb?url';
 
   let { data } = $props();
 
